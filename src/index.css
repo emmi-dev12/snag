@@ -632,12 +632,16 @@ legend { font-weight: 700; padding: 0; }
 
 .empty { margin-top: 1.5rem; }
 .empty p { max-width: 42ch; }
+.ghost-link { display: block; color: inherit; text-decoration: none; }
 .sheet.is-ghost {
   min-height: 5.5rem;
   margin-bottom: 1.1rem;
   background: color-mix(in srgb, var(--sheet) 55%, var(--paper));
 }
-.sheet.is-ghost::before { content: none; }
+.sheet.is-ghost::before {
+  opacity: 0.5;
+  transform: scaleY(1);
+}
 
 @media (min-width: 800px) {
   .column { padding-left: 2rem; padding-right: 2rem; }

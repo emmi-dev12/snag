@@ -378,7 +378,19 @@ async function readYouTube(url: URL, videoId: string): Promise<FetchedSource> {
       transcript = ""
     }
   }
-  const text = transcript || description
+  let pageWords = description
+  if (!transcript) {
+    try {
+      const watch = new URL(`https://www.youtube.com/watch?v=${videoId}`)
+      const htmlPlayer = playerFromHtml(await readText(await fetchChecked(watch, { headers: { cookie: "CONSENT=YES+1" } })))
+      const htmlTrack = pickTrack(htmlPlayer?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [])
+      if (htmlTrack?.baseUrl) transcript = await transcriptFromTrack(htmlTrack.baseUrl)
+      if (!pageWords) pageWords = htmlPlayer?.videoDetails?.shortDescription?.trim() || ""
+    } catch {
+      /* keep what we have */
+    }
+  }
+  const text = transcript || pageWords
   let cover: string | undefined
   let stills: string[] | undefined
   if (/^[a-zA-Z0-9_-]{6,16}$/.test(videoId)) {
@@ -406,7 +418,7 @@ async function readYouTube(url: URL, videoId: string): Promise<FetchedSource> {
       cover,
       stills,
     },
-    description,
+    description || pageWords,
   )
 }
 

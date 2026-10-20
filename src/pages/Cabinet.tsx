@@ -127,7 +127,13 @@ export function Cabinet() {
       {!ready ? <p className="status">Opening the cabinet.</p> : null}
       {ready && empty ? (
         <div className="empty">
-          {!hacks.length ? <article className="sheet is-ghost" aria-hidden="true" /> : null}
+          {!hacks.length ? (
+            <Link className="ghost-link" to="/snag">
+              <article className="sheet is-ghost">
+                <span className="sr-only">Snag a hack</span>
+              </article>
+            </Link>
+          ) : null}
           <p className="situation">{!hacks.length ? "The drawer is empty." : emptyCopy}</p>
           {!hacks.length ? (
             <p className="lede">
