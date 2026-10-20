@@ -1,0 +1,75 @@
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { sourceLabel } from "../cards.ts"
+import { useStore } from "../store.tsx"
+
+const ERROR_KEY = "snag.incomingError"
+
+export function InboxPage() {
+  const { ready, pending, keepPending, discardPending } = useStore()
+  const navigate = useNavigate()
+  const [dismissed, setDismissed] = useState(false)
+  const problem = dismissed ? null : sessionStorage.getItem(ERROR_KEY)
+
+  return (
+    <>
+      <h1>Inbox</h1>
+      <p className="lede">An agent files a hack by opening a link. It waits here until you keep it.</p>
+      {problem ? (
+        <p className="error" role="alert">
+          {problem}{" "}
+          <button
+            type="button"
+            className="quiet"
+            onClick={() => {
+              sessionStorage.removeItem(ERROR_KEY)
+              setDismissed(true)
+            }}
+          >
+            Dismiss
+          </button>
+        </p>
+      ) : null}
+      {!ready ? <p className="status">Opening the inbox.</p> : null}
+      {ready && !pending.length ? (
+        <div className="empty">
+          <p className="situation">Nothing is waiting.</p>
+          <p className="lede">
+            <Link to="/agent">Set up filing from an agent</Link>
+          </p>
+        </div>
+      ) : null}
+      {pending.map((hack) => (
+        <article className="sheet is-open" key={hack.id}>
+          <h2 className="situation">{hack.situation}</h2>
+          {hack.title !== hack.situation ? <p className="title-line">{hack.title}</p> : null}
+          {hack.steps.length ? (
+            <ol className="steps">
+              {hack.steps.map((step, index) => (
+                <li key={`${hack.id}-${index}`}>{step}</li>
+              ))}
+            </ol>
+          ) : null}
+          {hack.caveat ? <p className="caveat">{hack.caveat}</p> : null}
+          <p className="source-line">{sourceLabel(hack.source)}</p>
+          <div className="row-actions">
+            <button
+              type="button"
+              className="primary"
+              onClick={() => {
+                void keepPending(hack.id).then((saved) => {
+                  if (saved && pending.length === 1) navigate(`/?open=${saved.id}`)
+                })
+              }}
+            >
+              Keep
+            </button>
+            <button type="button" className="quiet" onClick={() => void discardPending(hack.id)}>
+              Discard
+            </button>
+          </div>
+        </article>
+      ))}
+    </>
+  )
+}

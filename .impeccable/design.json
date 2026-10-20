@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-19T12:00:00.000Z",
+  "title": "Design System: Snag",
+  "extensions": {
+    "colorMeta": {
+      "index-orange": {
+        "role": "primary",
+        "displayName": "Index Orange",
+        "canonical": "#e65300",
+        "tonalRamp": ["#330000", "#510a00", "#830000", "#a52e00", "#c84f19", "#f27545", "#ff9b6b", "#ffd3b4"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Workshop Paper",
+        "canonical": "#e8ebe6",
+        "tonalRamp": ["#111210", "#282927", "#414340", "#5c5e5b", "#797b77", "#9d9f9b", "#c2c5c1", "#eaece9"]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Sheet",
+        "canonical": "#f7f8f6",
+        "tonalRamp": ["#111211", "#292928", "#424341", "#5d5e5c", "#7a7a79", "#9e9f9d", "#c3c4c3", "#ebebea"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1c1915",
+        "tonalRamp": ["#13110f", "#2a2926", "#45423e", "#605d59", "#7d7a75", "#a19e99", "#c7c3bf", "#edebe8"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#4f4a42",
+        "tonalRamp": ["#13110e", "#2b2824", "#46423b", "#615d56", "#7e7a72", "#a39e96", "#c8c3bb", "#eeebe5"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#c9cdc4",
+        "tonalRamp": ["#11120f", "#282a26", "#41433d", "#5c5f58", "#787c75", "#9ca098", "#c2c5be", "#eaece7"]
+      },
+      "worked": {
+        "role": "neutral",
+        "displayName": "Worked Green",
+        "canonical": "#0d6840",
+        "tonalRamp": ["#001807", "#0a311e", "#04502f", "#2b6c4a", "#4a8a66", "#6eaf89", "#93d6ae", "#cdf7dd"]
+      },
+      "failed": {
+        "role": "neutral",
+        "displayName": "Failed Red",
+        "canonical": "#9b1c30",
+        "tonalRamp": ["#2e0003", "#4b1017", "#7b1324", "#9c353e", "#bd545a", "#e7787c", "#ff9ea1", "#ffd4d4"]
+      },
+      "select": {
+        "role": "neutral",
+        "displayName": "Select Peach",
+        "canonical": "#ffd2b8",
+        "tonalRamp": ["#1d0d04", "#362419", "#593a28", "#765542", "#94725e", "#ba9681", "#e1bba6", "#ffe5d7"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The app name on a screen." },
+      "display-desk": { "displayName": "Display, desk", "purpose": "The app name from 800px wide." },
+      "headline": { "displayName": "Headline", "purpose": "The card title." },
+      "headline-desk": { "displayName": "Headline, desk", "purpose": "The card title from 800px wide." },
+      "title": { "displayName": "Title", "purpose": "The short description under the card title." },
+      "body": { "displayName": "Body", "purpose": "Steps, notes, and the caveat." },
+      "label": { "displayName": "Label", "purpose": "Form labels and the chosen verdict." }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "progress-slide",
+        "value": "1s cubic-bezier(0.16, 1, 0.3, 1) infinite",
+        "purpose": "The indeterminate progress fill while a link or model is working. Reduced motion holds the bar still."
+      },
+      {
+        "name": "tab-rise",
+        "value": "transform 420ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The filing tab rises from the sheet edge when a card opens. Reduced motion snaps it into place."
+      }
+    ],
+    "breakpoints": [
+      { "name": "desk", "value": "800px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled action on a screen, such as Snag it or Keep.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Keep</button>",
+      "css": ".ds-btn-primary { background: var(--ink, #1c1915); color: var(--sheet, #f7f8f6); min-height: 48px; border-radius: 6px; border: 1px solid transparent; padding: 0.65rem 1rem; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; font-weight: 400; cursor: pointer; } .ds-btn-primary:hover { opacity: 0.88; } .ds-btn-primary:focus-visible { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; } .ds-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "A secondary action: Edit, Discard, Stop, Add a step.",
+      "html": "<button class=\"ds-btn-quiet\" type=\"button\">Edit</button>",
+      "css": ".ds-btn-quiet { background: transparent; color: var(--ink, #1c1915); min-height: 44px; border: 0; border-radius: 6px; padding: 0.4rem 0.55rem; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; cursor: pointer; } .ds-btn-quiet:hover { background: color-mix(in srgb, var(--ink, #1c1915) 6%, transparent); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
+    },
+    {
+      "name": "Search",
+      "kind": "input",
+      "refersTo": "search",
+      "description": "The cabinet search field. Slash focuses it.",
+      "html": "<label class=\"ds-search\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg><input class=\"ds-search-input\" type=\"search\" placeholder=\"When a wine stain is still wet\" aria-label=\"Search\"></label>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 0.6rem; min-height: 48px; padding: 0 0.85rem; background: var(--sheet, #f7f8f6); border: 1px solid var(--rule, #c9cdc4); border-radius: 6px; color: var(--ink, #1c1915); } .ds-search-input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0.75rem 0; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; color: inherit; caret-color: var(--tab, #e65300); } .ds-search-input::placeholder { color: var(--muted, #4f4a42); opacity: 1; } .ds-search-input:focus { outline: none; } .ds-search:focus-within { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "A labeled field. The label is visible and sentence case.",
+      "html": "<label class=\"ds-field\"><span>When</span><textarea class=\"ds-field-input\" rows=\"2\">When a red wine stain is still wet</textarea></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 0.35rem; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; color: var(--ink, #1c1915); } .ds-field span { font-weight: 700; } .ds-field-input { width: 100%; min-height: 48px; padding: 0.7rem 0.8rem; border: 1px solid var(--rule, #c9cdc4); border-radius: 6px; background: var(--paper, #e8ebe6); color: inherit; caret-color: var(--tab, #e65300); font: inherit; } .ds-field-input:focus { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
+    },
+    {
+      "name": "Index Card",
+      "kind": "card",
+      "refersTo": "index-card",
+      "description": "A closed card: one photo, the title, a short description, and the verdict.",
+      "html": "<article class=\"ds-card\"><button class=\"ds-card-face\" type=\"button\"><span class=\"ds-card-photo\" role=\"img\" aria-label=\"Card photo\"></span><span class=\"ds-card-copy\"><span class=\"ds-card-title\">Wine stain</span><span class=\"ds-card-blurb\">When a red wine stain is still wet</span><span class=\"ds-verdict\">Untried</span></span></button></article>",
+      "css": ".ds-card { position: relative; background: var(--sheet, #f7f8f6); border: 1px solid var(--rule, #c9cdc4); border-radius: 8px; } .ds-card-face { width: 100%; display: block; text-align: left; border: 0; background: transparent; padding: 0; cursor: pointer; color: inherit; } .ds-card-photo { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: 7px 7px 0 0; background: linear-gradient(160deg, #6a3418 0%, #e65300 42%, #f7f8f6 42.2%, #f7f8f6 58%, #9b1c30 58.2%, #9b1c30 100%); } .ds-card-copy { display: grid; grid-template-columns: 1fr auto; column-gap: 0.75rem; padding: 0.85rem 1rem 0.75rem; } .ds-card-title { font-family: Anybody, \"Avenir Next Condensed\", sans-serif; font-stretch: 75%; font-weight: 700; font-size: 1.55rem; letter-spacing: -0.03em; line-height: 1.05; color: var(--ink, #1c1915); } .ds-card-blurb { grid-column: 1; margin-top: 0.35rem; color: var(--muted, #4f4a42); font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 1.02rem; line-height: 1.35; } .ds-verdict { grid-column: 2; grid-row: 1; color: var(--muted, #4f4a42); font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; } .ds-card-face:hover .ds-card-title { text-decoration: underline; text-underline-offset: 0.12em; } .ds-card-face:focus-visible { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
+    },
+    {
+      "name": "Open Index Card",
+      "kind": "card",
+      "refersTo": "index-card",
+      "description": "The same card opened. The orange tab rises and the steps show.",
+      "html": "<article class=\"ds-card ds-card-open\"><span class=\"ds-tab\" aria-hidden=\"true\"></span><div class=\"ds-card-copy\"><span class=\"ds-card-title\">Wine stain</span><span class=\"ds-card-blurb\">When a red wine stain is still wet</span></div><ol class=\"ds-steps\"><li>Cover the stain with salt.</li><li>Rinse from the back with cold water.</li></ol></article>",
+      "css": ".ds-card { position: relative; margin-top: 1.35rem; background: var(--sheet, #f7f8f6); border: 1px solid var(--rule, #c9cdc4); border-radius: 8px; padding-bottom: 0.6rem; } .ds-tab { position: absolute; top: -11px; left: 1rem; width: 4.5rem; height: 12px; background: var(--tab, #e65300); border-radius: 4px 4px 0 0; } .ds-card-copy { display: grid; padding: 0.85rem 1rem 0.35rem; } .ds-card-title { font-family: Anybody, \"Avenir Next Condensed\", sans-serif; font-stretch: 75%; font-weight: 700; font-size: 1.55rem; letter-spacing: -0.03em; line-height: 1.05; color: var(--ink, #1c1915); } .ds-card-blurb { margin-top: 0.35rem; color: var(--muted, #4f4a42); font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 1.02rem; line-height: 1.35; } .ds-steps { margin: 0.4rem 0 0; padding: 0 1rem 0 2.4rem; max-width: 65ch; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; line-height: 1.5; color: var(--ink, #1c1915); } .ds-steps li { margin: 0.35rem 0; } .ds-steps li::marker { font-weight: 700; }"
+    },
+    {
+      "name": "Tag",
+      "kind": "chip",
+      "refersTo": "button-quiet",
+      "description": "A topic on a card. Choosing it filters the cabinet.",
+      "html": "<button class=\"ds-tag\" type=\"button\">laundry</button>",
+      "css": ".ds-tag { min-height: 44px; border: 0; background: transparent; color: var(--muted, #4f4a42); text-decoration: underline; text-underline-offset: 0.18em; padding: 0.4rem 0.2rem; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; cursor: pointer; } .ds-tag:hover { background: color-mix(in srgb, var(--ink, #1c1915) 6%, transparent); } .ds-tag:focus-visible { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
+    },
+    {
+      "name": "Bottom Nav",
+      "kind": "nav",
+      "description": "Cabinet, Snag, and Inbox. The current place is ink and bold.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><a href=\"#cabinet\">Cabinet</a><a href=\"#snag\" aria-current=\"page\">Snag</a><a href=\"#inbox\">Inbox</a></nav>",
+      "css": ".ds-nav { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--nav, #f7f8f6); border-top: 1px solid var(--rule, #c9cdc4); padding: 0.2rem 0.4rem; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; } .ds-nav a { min-height: 48px; display: flex; align-items: center; justify-content: center; text-decoration: none; color: var(--muted, #4f4a42); border-radius: 6px; } .ds-nav a:hover { background: color-mix(in srgb, var(--ink, #1c1915) 6%, transparent); } .ds-nav a[aria-current=\"page\"] { color: var(--ink, #1c1915); font-weight: 700; } .ds-nav a:focus-visible { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Index Card",
+    "overview": "Snag looks like a stack of filed cards on workshop paper. The page is a narrow column, left aligned, with the name of the app, a search field, and the cards. Each card is one photo of the thing when a photo exists, the title in condensed type, and a short description of the moment. The verdict sits beside the title. Nothing else competes.\n\nOpening a card raises an orange filing tab and shows the procedure: numbered steps, any pictures the person kept, the way it goes wrong, and the mark for whether it worked. The tab is the only ornament. Depth is the sheet sitting on the paper. There is no drop shadow and no second accent.\n\nThe photo is part of the card, not a feed thumbnail. A card with no photo stays a text card. Pictures inside the procedure are the ones the person chose.",
+    "keyCharacteristics": [
+      "One column, one sheet, one orange tab",
+      "Anybody Condensed for the app name and the card title",
+      "Atkinson Hyperlegible for the description, the steps, and the controls",
+      "Flat paper and sheet, tonal, not shadowed",
+      "A photo only when one was kept"
+    ],
+    "rules": [
+      {
+        "name": "The One Tab Rule",
+        "body": "Index Orange is the tab, the caret, and the progress fill. Buttons are ink on paper. A screen does not get a second accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark Swap Rule",
+        "body": "Dark mode swaps these roles under prefers-color-scheme. It does not invent a new palette.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Voices Rule",
+        "body": "Anybody carries the app name and the card title. Atkinson carries the description, the steps, and every control.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Labels are sentence case. No tracked capitals, no eyebrows.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "Do not add a drop shadow to a card, a button, a menu, or a toast. The toast is ink filled with sheet-colored type. It is a slab, not a lift.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep one column, the sheet on the paper, and the orange tab as the only ornament.",
+      "Do set the card title in Anybody Condensed and the short description in Atkinson.",
+      "Do leave a card text-only when no photo was kept.",
+      "Do show chosen pictures inside the open procedure, full width, in the order they were kept.",
+      "Do keep targets at least 44px, focus visible, and steps in a real numbered list."
+    ],
+    "donts": [
+      "Don't lay the cabinet out as a grid of equal recipe cards.",
+      "Don't fill a button with Index Orange.",
+      "Don't add a drop shadow, a glass blur, or a second accent.",
+      "Don't set the short description in Anybody, or the steps in condensed type.",
+      "Don't put an eyebrow, a kicker, or all-caps tracking on a label.",
+      "Don't invent a placeholder photo for a card that does not have one."
+    ]
+  }
+}
