@@ -10,7 +10,7 @@ export function AgentPage() {
   return (
     <>
       <h1>For your agent</h1>
-      <p className="lede">Paste this into the agent that should file hacks. The card rides in the link. It is not stored on a server.</p>
+      <p className="lede">Paste this into ChatGPT or another agent. It can write a JSON file of many hacks, or open a single-hack link. Nothing is stored on a server until you import it.</p>
       <pre className="instructions">{instructions}</pre>
       <div className="row-actions">
         <button

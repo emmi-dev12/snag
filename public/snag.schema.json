@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snag-hacks.vercel.app/snag.schema.json",
+  "title": "Snag hacks",
+  "description": "One hack, a list of hacks, or { \"hacks\": [...] }. Photos and transcripts do not belong here.",
+  "oneOf": [
+    { "$ref": "#/$defs/hack" },
+    { "type": "array", "items": { "$ref": "#/$defs/hack" } },
+    {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "hacks": { "type": "array", "items": { "$ref": "#/$defs/hack" } },
+        "cards": { "type": "array", "items": { "$ref": "#/$defs/hack" } }
+      }
+    }
+  ],
+  "$defs": {
+    "hack": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "situation": { "type": "string", "description": "The moment this is useful. Start with When." },
+        "when": { "type": "string" },
+        "title": { "type": "string" },
+        "name": { "type": "string" },
+        "steps": { "type": "array", "items": { "type": "string" } },
+        "instructions": { "type": "array", "items": { "type": "string" } },
+        "caveat": { "type": "string" },
+        "warning": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "url": { "type": "string" },
+        "link": { "type": "string" }
+      }
+    }
+  }
+}

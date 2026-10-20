@@ -19,6 +19,7 @@ type Store = {
   updateHack: (id: string, draft: HackDraft) => Promise<void>
   setVerdict: (id: string, verdict: Verdict) => Promise<void>
   deleteHack: (id: string) => Promise<void>
+  importIncoming: (raw: string) => Promise<number>
   keepPending: (id: string) => Promise<Hack | undefined>
   discardPending: (id: string) => Promise<void>
 }
@@ -141,6 +142,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       async discardPending(id) {
         await db.deletePending(id)
         await refresh()
+      },
+      async importIncoming(raw) {
+        const { parseIncoming, FILE_LIMIT } = await import("./incoming.ts")
+        const items = parseIncoming(raw, { maxLength: FILE_LIMIT })
+        await db.putPending(items)
+        await refresh()
+        notify(items.length === 1 ? "1 hack waiting." : `${items.length} hacks waiting.`)
+        return items.length
       },
     }
   }, [dismissToast, hacks, notify, pending, ready, refresh, toast])

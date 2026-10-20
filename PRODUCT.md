@@ -30,6 +30,7 @@ The person pastes a YouTube, Instagram, Facebook, or other link, attaches a vide
 - A YouTube link also brings the public preview photo, and the few stills YouTube publishes beside it, as pictures the person can keep or drop.
 - When the procedure is a sequence of images, the person attaches the video file. Snag samples frames on the device and offers them as pictures to include. It does not download the video file to a server.
 - An agent files a card by opening `{origin}/inbox#card=` plus a base64url JSON payload. The hash never hits the server. The card waits in the inbox to keep or discard.
+- Inbox can import a JSON file of many hacks (`hacks` array, a bare array, or JSON Lines). ChatGPT-style names are fine: when/situation, name/title, instructions/steps, warning/caveat. Photos do not belong in the file. Keep or discard each card.
 - Each open card can show a QR of that same inbox link. Photos are not in the code. A friend scans it in Snag on phone or computer. Camera, or a photo of the code.
 - A stateless `/api/source` read fetches a public page once so the words, hashtags, and preview photo can come back. It does not store the card. Say that a link is fetched. Do not say nothing is uploaded.
 - The page a hack came from has its own Link field. The open card shows that URL. An empty link clears it. The situation stays the moment, not the address.

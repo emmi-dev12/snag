@@ -14,6 +14,7 @@ Live: **https://snag-hacks.vercel.app** (`snag.vercel.app` was taken)
 - One computer keeps `data/library.json`. The other device scans the code on the sync page
 - On a phone: share a YouTube link into Snag
 - Each card can show a QR code. Friends scan it in Snag. Photos stay on your device.
+- Inbox: import a JSON file of many hacks (`hacks`, an array, or JSON Lines)
 
 ## What it does not
 
