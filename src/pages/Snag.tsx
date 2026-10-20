@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, lazy, Suspense, type FormEvent } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import type { DownloadProgress } from "cactus-needle/browser"
 import { draftReady, emptyDraft, mergeTags } from "../cards.ts"
 import { DraftForm } from "../components/DraftForm.tsx"
 import { useStore } from "../store.tsx"
 import type { FetchedSource, HackDraft, HackSource } from "../types.ts"
+
+const QrScan = lazy(() => import("../components/QrScan.tsx").then((mod) => ({ default: mod.QrScan })))
 
 type Phase =
   | { name: "idle" }
@@ -44,6 +46,7 @@ export function SnagPage() {
   const [link, setLink] = useState("")
   const [phase, setPhase] = useState<Phase>({ name: "idle" })
   const [draftError, setDraftError] = useState("")
+  const [scanning, setScanning] = useState(false)
 
   function stop() {
     run.current += 1
@@ -218,8 +221,13 @@ export function SnagPage() {
   return (
     <>
       <h1>Snag a hack</h1>
-      <p className="lede">Paste a YouTube, Instagram, Facebook, or web link. YouTube captions work best. A clip you attach is heard on this device. Share a link into Snag from another app and it lands here.</p>
-      {phase.name !== "draft" ? (
+      <p className="lede">Paste a YouTube, Instagram, Facebook, or web link. YouTube captions work best. A clip you attach is heard on this device. Scan a friend's code, or share a link into Snag.</p>
+      {scanning ? (
+        <Suspense fallback={<p className="status">Opening the camera.</p>}>
+          <QrScan onClose={() => setScanning(false)} />
+        </Suspense>
+      ) : null}
+      {phase.name !== "draft" && !scanning ? (
         <form className="stack" onSubmit={(event) => void onLink(event)}>
           <label className="field" htmlFor="hack-link">
             <span>Link</span>
@@ -246,6 +254,9 @@ export function SnagPage() {
               onClick={() => setPhase({ name: "draft", draft: emptyDraft(), source: { kind: "typed" } })}
             >
               Type it
+            </button>
+            <button className="quiet" type="button" onClick={() => setScanning(true)} disabled={phase.name === "working"}>
+              Scan a code
             </button>
           </div>
           <input

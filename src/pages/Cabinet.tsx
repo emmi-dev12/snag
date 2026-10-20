@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, lazy, Suspense } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { Search } from "lucide-react"
 import { haystack } from "../cards.ts"
 import { HackSheet } from "../components/HackSheet.tsx"
 import { useStore } from "../store.tsx"
 import type { Verdict } from "../types.ts"
+
+const QrScan = lazy(() => import("../components/QrScan.tsx").then((mod) => ({ default: mod.QrScan })))
 
 const filters: { id: Verdict | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -25,6 +27,7 @@ export function Cabinet() {
     const standalone = window.matchMedia("(display-mode: standalone)").matches
     return ios && !standalone && localStorage.getItem("snag.install.dismissed") !== "1"
   })
+  const [scanning, setScanning] = useState(false)
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -120,10 +123,18 @@ export function Cabinet() {
         ))}
       </div>
       <p className="note">
+        <button type="button" className="quiet" onClick={() => setScanning((on) => !on)}>
+          {scanning ? "Stop scanning" : "Scan a code"}
+        </button>
         <Link className="quiet" to="/sync">
           Sync between devices
         </Link>
       </p>
+      {scanning ? (
+        <Suspense fallback={<p className="status">Opening the camera.</p>}>
+          <QrScan onClose={() => setScanning(false)} />
+        </Suspense>
+      ) : null}
       {!ready ? <p className="status">Opening the cabinet.</p> : null}
       {ready && empty ? (
         <div className="empty">

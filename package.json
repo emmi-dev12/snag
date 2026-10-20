@@ -8,13 +8,14 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --test sync/library.test.mjs api/_lib/fetchSource.test.ts",
+    "test": "node --experimental-strip-types --test sync/library.test.mjs api/_lib/fetchSource.test.ts tests/share.test.ts",
     "start": "node sync/server.mjs",
     "sync": "node sync/server.mjs"
   },
   "dependencies": {
     "cactus-needle": "^0.3.0",
     "idb": "^8.0.4",
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.59.0",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",

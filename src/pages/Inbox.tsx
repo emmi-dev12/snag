@@ -1,7 +1,9 @@
-import { useState } from "react"
+import { useState, lazy, Suspense } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { sourceLabel } from "../cards.ts"
 import { useStore } from "../store.tsx"
+
+const QrScan = lazy(() => import("../components/QrScan.tsx").then((mod) => ({ default: mod.QrScan })))
 
 const ERROR_KEY = "snag.incomingError"
 
@@ -9,12 +11,23 @@ export function InboxPage() {
   const { ready, pending, keepPending, discardPending } = useStore()
   const navigate = useNavigate()
   const [dismissed, setDismissed] = useState(false)
+  const [scanning, setScanning] = useState(false)
   const problem = dismissed ? null : sessionStorage.getItem(ERROR_KEY)
 
   return (
     <>
       <h1>Inbox</h1>
-      <p className="lede">An agent files a hack by opening a link. It waits here until you keep it.</p>
+      <p className="lede">An agent files a hack by opening a link. A friend can show you a code. It waits here until you keep it.</p>
+      {scanning ? (
+        <Suspense fallback={<p className="status">Opening the camera.</p>}>
+          <QrScan onClose={() => setScanning(false)} />
+        </Suspense>
+      ) : null}
+      <p className="note">
+        <button type="button" className="quiet" onClick={() => setScanning((on) => !on)}>
+          {scanning ? "Stop scanning" : "Scan a code"}
+        </button>
+      </p>
       {problem ? (
         <p className="error" role="alert">
           {problem}{" "}

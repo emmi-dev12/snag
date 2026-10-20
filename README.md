@@ -13,6 +13,7 @@ DE · [EN](README.en.md)
 - Cabinet: untried / worked / failed
 - Ein Computer hält `data/library.json`. Das andere Gerät scannt den Code auf der Sync-Seite
 - Vom Telefon: YouTube-Link in Snag teilen
+- Jede Karte kann einen QR-Code zeigen. Freunde scannen ihn in Snag. Fotos bleiben auf deinem Gerät.
 
 ## Was es nicht tut
 

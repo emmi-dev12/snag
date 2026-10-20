@@ -3,6 +3,7 @@ import type { Hack, HackDraft, Verdict } from "../types.ts"
 import { draftFromHack, draftReady, safeHttpUrl, sourceLabel } from "../cards.ts"
 import { useStore } from "../store.tsx"
 import { DraftForm } from "./DraftForm.tsx"
+import { QrShare } from "./QrShare.tsx"
 
 const verdicts: Verdict[] = ["untried", "worked", "failed"]
 
@@ -90,6 +91,7 @@ export function HackSheet({ hack, open, onToggle, onTag }: { hack: Hack; open: b
             ) : label ? (
               <p className="source-line">{label}</p>
             ) : null}
+            <QrShare hack={hack} />
             <div className="verdict" role="radiogroup" aria-label="Did it work">
               {verdicts.map((verdict) => (
                 <button
