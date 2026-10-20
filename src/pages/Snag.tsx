@@ -1,5 +1,5 @@
-import { useRef, useState, type FormEvent } from "react"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import type { DownloadProgress } from "cactus-needle/browser"
 import { draftReady, emptyDraft, mergeTags } from "../cards.ts"
 import { DraftForm } from "../components/DraftForm.tsx"
@@ -17,6 +17,11 @@ async function describeModelError(error: unknown) {
   return modelFailure(error)
 }
 
+function firstUrl(value: string) {
+  const match = value.match(/https?:\/\/[^\s<>"]+/i)
+  return match?.[0]?.replace(/[),.;]+$/, "") ?? ""
+}
+
 async function readLink(url: string): Promise<FetchedSource> {
   const response = await fetch("/api/source", {
     method: "POST",
@@ -30,10 +35,12 @@ async function readLink(url: string): Promise<FetchedSource> {
 
 export function SnagPage() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { saveHack } = useStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const run = useRef(0)
+  const shared = useRef(false)
   const [link, setLink] = useState("")
   const [phase, setPhase] = useState<Phase>({ name: "idle" })
   const [draftError, setDraftError] = useState("")
@@ -111,12 +118,11 @@ export function SnagPage() {
     }
   }
 
-  async function onLink(event: FormEvent) {
-    event.preventDefault()
+  async function snagUrl(raw: string) {
     const ticket = ++run.current
     setPhase({ name: "working", label: "Reading the link", percent: null })
     try {
-      const source = await readLink(link)
+      const source = await readLink(raw)
       if (ticket !== run.current) return
       const note = [source.warning, source.text.length > 3200 ? "Needle reads the opening of a long transcript." : ""]
         .filter(Boolean)
@@ -140,6 +146,20 @@ export function SnagPage() {
       setPhase({ name: "error", message: error instanceof Error ? error.message : "Could not read that link." })
     }
   }
+
+  async function onLink(event: FormEvent) {
+    event.preventDefault()
+    await snagUrl(link)
+  }
+
+  useEffect(() => {
+    if (shared.current) return
+    const handed = params.get("url") || firstUrl(params.get("text") || "") || firstUrl(params.get("title") || "")
+    if (!handed) return
+    shared.current = true
+    setLink(handed)
+    void snagUrl(handed)
+  }, [params])
 
   async function onFile(file: File) {
     const controller = new AbortController()
@@ -198,7 +218,7 @@ export function SnagPage() {
   return (
     <>
       <h1>Snag a hack</h1>
-      <p className="lede">Paste a YouTube, Instagram, Facebook, or web link. YouTube captions work best. A clip you attach is heard on this device.</p>
+      <p className="lede">Paste a YouTube, Instagram, Facebook, or web link. YouTube captions work best. A clip you attach is heard on this device. Share a link into Snag from another app and it lands here.</p>
       {phase.name !== "draft" ? (
         <form className="stack" onSubmit={(event) => void onLink(event)}>
           <label className="field" htmlFor="hack-link">
@@ -218,7 +238,7 @@ export function SnagPage() {
               Snag it
             </button>
             <button className="quiet" type="button" onClick={() => fileRef.current?.click()} disabled={phase.name === "working"}>
-              Attach a video
+              Attach a clip
             </button>
             <button
               className="quiet"

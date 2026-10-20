@@ -85,6 +85,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await db.putHack(hack)
         await refresh()
         scheduleSync()
+        notify("Filed.")
         return hack
       },
       async updateHack(id, draft) {
@@ -134,6 +135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await db.deletePending(id)
         await refresh()
         scheduleSync()
+        notify("Filed.")
         return hack
       },
       async discardPending(id) {

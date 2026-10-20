@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "test": "node --experimental-strip-types --test sync/library.test.mjs api/_lib/fetchSource.test.ts",
     "start": "node sync/server.mjs",
     "sync": "node sync/server.mjs"
   },

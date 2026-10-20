@@ -1,6 +1,6 @@
 {
   "framework": "vite",
   "rewrites": [
-    { "source": "/((?!api/|assets/|fonts/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|fonts/|llms\\.txt).*)", "destination": "/index.html" }
   ]
 }

@@ -12,6 +12,7 @@ DE · [EN](README.en.md)
 - Needle auf dem Gerät macht daraus Schritte
 - Cabinet: untried / worked / failed
 - Ein Computer hält `data/library.json`. Das andere Gerät scannt den Code auf der Sync-Seite
+- Vom Telefon: YouTube-Link in Snag teilen
 
 ## Was es nicht tut
 

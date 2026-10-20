@@ -23,6 +23,7 @@ data/
 # Impeccable local review dumps
 .impeccable/review
 .impeccable/live
+.hermes/
 
 # Editor directories and files
 .vscode/*

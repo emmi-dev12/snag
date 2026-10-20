@@ -12,6 +12,7 @@ Live: **https://snag-hacks.vercel.app** (`snag.vercel.app` was taken)
 - Needle on the device turns words into steps
 - Cabinet: untried / worked / failed
 - One computer keeps `data/library.json`. The other device scans the code on the sync page
+- On a phone: share a YouTube link into Snag
 
 ## What it does not
 

@@ -1,0 +1,30 @@
+# Snag
+
+Lifehack cabinet. No account. The card stays on the device until a computer you leave on keeps the file.
+
+Live: https://snag-hacks.vercel.app
+
+## Agent filing
+
+Open one URL per hack. The card rides in the hash. It is not stored on a server.
+
+```
+{origin}/inbox#card=BASE64URL
+```
+
+BASE64URL is UTF-8 JSON, base64url, no padding:
+
+```
+{
+  "situation": "When …",
+  "title": "short name",
+  "steps": ["one action", "the next action"],
+  "caveat": "",
+  "tags": ["topic"],
+  "source": { "kind": "agent", "label": "your name", "url": "https://the-page" }
+}
+```
+
+`situation` starts with "When". Do not invent steps. Do not send the card anywhere else.
+
+Source: https://github.com/emmi-dev12/snag

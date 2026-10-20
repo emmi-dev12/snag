@@ -210,11 +210,11 @@ function normalizeInput(input: string) {
   }
 }
 
-function youtubeId(url: URL) {
+export function youtubeId(url: URL) {
   const host = url.hostname.replace(/^www\.|^m\./, "")
   if (host === "youtu.be") return url.pathname.split("/").filter(Boolean)[0] ?? null
   if (host === "youtube.com" || host === "music.youtube.com" || host === "youtube-nocookie.com") {
-    if (url.pathname === "/watch") return url.searchParams.get("v")
+    if (url.pathname === "/watch" || url.pathname === "/watch/") return url.searchParams.get("v")
     const match = url.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?#]+)/)
     return match?.[1] ?? null
   }
@@ -302,6 +302,46 @@ function playerFromHtml(html: string) {
   return null
 }
 
+async function youtubeOembed(videoId: string) {
+  try {
+    const response = await fetchChecked(
+      new URL(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`),
+    )
+    const data = (await response.json()) as { title?: string; author_name?: string }
+    return { title: data.title?.trim() || "", author: data.author_name?.trim() || "" }
+  } catch {
+    return { title: "", author: "" }
+  }
+}
+
+async function transcriptFromList(videoId: string) {
+  const response = await fetchChecked(new URL(`https://www.youtube.com/api/timedtext?type=list&v=${encodeURIComponent(videoId)}`))
+  const xml = await readText(response)
+  const tracks = [...xml.matchAll(/<track\b([^>]*)\/?>/g)].map((match) => match[1])
+  const parsed = tracks
+    .map((attrs) => ({
+      lang: attrs.match(/\blang_code="([^"]+)"/)?.[1] ?? "",
+      kind: attrs.match(/\bkind="([^"]+)"/)?.[1] ?? "",
+    }))
+    .filter((track) => track.lang)
+  const pick =
+    parsed.find((track) => !track.kind && track.lang === "en") ??
+    parsed.find((track) => !track.kind && track.lang.startsWith("en")) ??
+    parsed.find((track) => !track.kind) ??
+    parsed.find((track) => track.lang === "en") ??
+    parsed[0]
+  if (!pick) return ""
+  const timed = new URL("https://www.youtube.com/api/timedtext")
+  timed.searchParams.set("v", videoId)
+  timed.searchParams.set("lang", pick.lang)
+  timed.searchParams.set("fmt", "json3")
+  if (pick.kind) timed.searchParams.set("kind", pick.kind)
+  const captions = await fetchChecked(timed)
+  const body = await readText(captions)
+  if (body.trim().startsWith("{") || body.trim().startsWith("[")) return json3ToText(body)
+  return xmlToText(body)
+}
+
 async function readYouTube(url: URL, videoId: string): Promise<FetchedSource> {
   let player: Awaited<ReturnType<typeof playerResponse>> | null = null
   try {
@@ -310,18 +350,30 @@ async function readYouTube(url: URL, videoId: string): Promise<FetchedSource> {
     player = null
   }
   if (!player?.videoDetails?.title) {
-    const watch = new URL(`https://www.youtube.com/watch?v=${videoId}`)
-    const response = await fetchChecked(watch, { headers: { cookie: "CONSENT=YES+1" } })
-    player = playerFromHtml(await readText(response))
+    try {
+      const watch = new URL(`https://www.youtube.com/watch?v=${videoId}`)
+      const response = await fetchChecked(watch, { headers: { cookie: "CONSENT=YES+1" } })
+      player = playerFromHtml(await readText(response))
+    } catch {
+      player = player
+    }
   }
-  const title = player?.videoDetails?.title?.trim() || "YouTube video"
-  const author = player?.videoDetails?.author?.trim() || ""
+  const listed = player?.videoDetails?.title ? { title: "", author: "" } : await youtubeOembed(videoId)
+  const title = player?.videoDetails?.title?.trim() || listed.title || "YouTube video"
+  const author = player?.videoDetails?.author?.trim() || listed.author || ""
   const description = player?.videoDetails?.shortDescription?.trim() || ""
   const track = pickTrack(player?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [])
   let transcript = ""
   if (track?.baseUrl) {
     try {
       transcript = await transcriptFromTrack(track.baseUrl)
+    } catch {
+      transcript = ""
+    }
+  }
+  if (!transcript) {
+    try {
+      transcript = await transcriptFromList(videoId)
     } catch {
       transcript = ""
     }
@@ -358,14 +410,22 @@ async function readYouTube(url: URL, videoId: string): Promise<FetchedSource> {
   )
 }
 
-function instagramCode(url: URL) {
-  const match = url.pathname.match(/\/(?:p|reel|reels|tv)\/([^/?#]+)/)
+export function instagramCode(url: URL) {
+  const match = url.pathname.match(/\/(?:share\/)?(?:p|reel|reels|tv)\/([^/?#]+)/)
   return match?.[1] ?? null
 }
 
 function loginWall(title: string, text: string) {
   const blob = `${title} ${text}`.toLowerCase()
   return (blob.includes("log in") || blob.includes("login") || blob.includes("sign up")) && text.length < 280
+}
+
+function hollowSocialTitle(title: string) {
+  const value = title.trim().toLowerCase()
+  if (!value || value === "instagram" || value === "facebook" || value === "tiktok") return true
+  if (value.includes("log in") || value.includes("sign up")) return true
+  if (value.includes("views") && value.includes("reactions")) return true
+  return false
 }
 
 async function readEmbed(pageUrl: URL, embedUrl: URL, kind: "instagram" | "facebook"): Promise<FetchedSource> {
@@ -381,7 +441,7 @@ async function readEmbed(pageUrl: URL, embedUrl: URL, kind: "instagram" | "faceb
     return {
       kind,
       url: publicUrl(pageUrl),
-      title: loginWall(title, text) ? "" : title,
+      title: hollowSocialTitle(title) || loginWall(title, text) ? "" : title,
       author: "",
       text: "",
       textKind: "caption",
@@ -441,6 +501,17 @@ export async function fetchSource(input: string): Promise<FetchedSource> {
   const videoId = youtubeId(url)
   if (videoId) return readYouTube(url, videoId)
   if (host.endsWith("instagram.com")) {
+    if (/\/stories\//.test(url.pathname)) {
+      return {
+        kind: "instagram",
+        url: publicUrl(url),
+        title: "",
+        author: "",
+        text: "",
+        textKind: "caption",
+        warning: "Instagram stories aren't public. Paste the caption, or attach the video file.",
+      }
+    }
     const code = instagramCode(url)
     if (!code) throw new SourceError("That Instagram link needs a post or reel.")
     const kind = url.pathname.includes("/reel") ? "reel" : "p"
@@ -448,6 +519,19 @@ export async function fetchSource(input: string): Promise<FetchedSource> {
   }
   if (host.endsWith("facebook.com") || host === "fb.watch" || host.endsWith("fb.com")) {
     return readEmbed(url, url, "facebook")
+  }
+  if (host.endsWith("tiktok.com")) {
+    const page = await readWeb(url)
+    if (page.text.trim().length >= 80 && !loginWall(page.title, page.text)) return page
+    return {
+      kind: "web",
+      url: publicUrl(url),
+      title: "",
+      author: "",
+      text: "",
+      textKind: "page",
+      warning: "TikTok didn't share this post. Paste the caption, or attach the video file.",
+    }
   }
   return readWeb(url)
 }

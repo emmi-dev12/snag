@@ -632,6 +632,12 @@ legend { font-weight: 700; padding: 0; }
 
 .empty { margin-top: 1.5rem; }
 .empty p { max-width: 42ch; }
+.sheet.is-ghost {
+  min-height: 5.5rem;
+  margin-bottom: 1.1rem;
+  background: color-mix(in srgb, var(--sheet) 55%, var(--paper));
+}
+.sheet.is-ghost::before { content: none; }
 
 @media (min-width: 800px) {
   .column { padding-left: 2rem; padding-right: 2rem; }

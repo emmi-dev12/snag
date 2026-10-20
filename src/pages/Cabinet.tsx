@@ -26,6 +26,21 @@ export function Cabinet() {
     return ios && !standalone && localStorage.getItem("snag.install.dismissed") !== "1"
   })
 
+  const shown = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return hacks
+      .filter((hack) => verdict === "all" || hack.verdict === verdict)
+      .filter((hack) => !needle || haystack(hack).includes(needle))
+      .sort((a, b) => b.createdAt - a.createdAt)
+  }, [hacks, query, verdict])
+
+  function setOpen(id: string | null) {
+    const copy = new URLSearchParams(params)
+    if (id) copy.set("open", id)
+    else copy.delete("open")
+    setParams(copy, { replace: true })
+  }
+
   useEffect(() => {
     const onPrompt = (event: Event) => {
       event.preventDefault()
@@ -37,23 +52,31 @@ export function Cabinet() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
       const target = event.target
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return
-      event.preventDefault()
-      document.getElementById("find-hack")?.focus()
+      if (event.key === "/") {
+        event.preventDefault()
+        document.getElementById("find-hack")?.focus()
+        return
+      }
+      const ids = shown.map((hack) => hack.id)
+      if (!ids.length) return
+      const index = open ? ids.indexOf(open) : -1
+      if (event.key === "j") {
+        event.preventDefault()
+        setOpen(ids[Math.min(ids.length - 1, index + 1)])
+      } else if (event.key === "k") {
+        event.preventDefault()
+        setOpen(ids[Math.max(0, index <= 0 ? 0 : index - 1)])
+      } else if (event.key === "Escape" && open) {
+        event.preventDefault()
+        setOpen(null)
+      }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [])
-
-  const shown = useMemo(() => {
-    const needle = query.trim().toLowerCase()
-    return hacks
-      .filter((hack) => verdict === "all" || hack.verdict === verdict)
-      .filter((hack) => !needle || haystack(hack).includes(needle))
-      .sort((a, b) => b.createdAt - a.createdAt)
-  }, [hacks, query, verdict])
+  }, [open, shown])
 
   function setQuery(next: string) {
     const copy = new URLSearchParams(params)
@@ -66,13 +89,6 @@ export function Cabinet() {
     const copy = new URLSearchParams(params)
     if (next === "all") copy.delete("show")
     else copy.set("show", next)
-    setParams(copy, { replace: true })
-  }
-
-  function setOpen(id: string | null) {
-    const copy = new URLSearchParams(params)
-    if (id) copy.set("open", id)
-    else copy.delete("open")
     setParams(copy, { replace: true })
   }
 
@@ -111,12 +127,14 @@ export function Cabinet() {
       {!ready ? <p className="status">Opening the cabinet.</p> : null}
       {ready && empty ? (
         <div className="empty">
-          <p className="situation">{emptyCopy}</p>
+          {!hacks.length ? <article className="sheet is-ghost" aria-hidden="true" /> : null}
+          <p className="situation">{!hacks.length ? "The drawer is empty." : emptyCopy}</p>
           {!hacks.length ? (
             <p className="lede">
               <Link to="/snag">Snag a hack from a video</Link>
               {" or "}
-              <Link to="/agent">let an agent file one</Link>.
+              <Link to="/agent">let an agent file one</Link>
+              . On a phone, share a YouTube link into Snag.
             </p>
           ) : null}
         </div>
