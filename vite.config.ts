@@ -60,7 +60,18 @@ export default defineConfig({
     sourceApi(),
     ...VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png", "apple-touch-icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"],
+      includeAssets: [
+        "favicon.svg",
+        "apple-touch-icon.png",
+        "apple-touch-icon-precomposed.png",
+        "apple-touch-icon-120x120.png",
+        "apple-touch-icon-120x120-precomposed.png",
+        "apple-touch-icon-180.png",
+        "apple-touch-icon-180x180.png",
+        "icon-192.png",
+        "icon-512.png",
+        "icon-maskable-512.png",
+      ],
       manifest: {
         name: "Snag",
         short_name: "Snag",
@@ -79,6 +90,8 @@ export default defineConfig({
           },
         },
         icons: [
+          { src: "apple-touch-icon-120x120.png", sizes: "120x120", type: "image/png", purpose: "any" },
+          { src: "apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any" },
           { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
           { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
           { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
@@ -87,7 +100,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /\.[a-z0-9]+$/i],
       },
     }),
   ],

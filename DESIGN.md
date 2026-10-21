@@ -240,7 +240,7 @@ A fixed bottom bar on Nav, hairline Rule on top, three links: Cabinet, Snag, Inb
 
 ### Index card
 
-The signature is the tab. It is absent while the card is closed. Opening the card raises it once from the sheet edge, 420ms, ease-out. Reduced motion snaps it into place. The photo does not grow a frame of its own. A missing photo does not leave a gray slot. The app mark is that tab on a sheet, beside the cabinet name. On the home screen the sheet fills the tile, and the touch icon is apple-touch-icon-180.png.
+The signature is the tab. It is absent while the card is closed. Opening the card raises it once from the sheet edge, 420ms, ease-out. Reduced motion snaps it into place. The photo does not grow a frame of its own. A missing photo does not leave a gray slot. The app mark is that tab on a sheet, beside the cabinet name. On the home screen the sheet fills the tile. iOS asks for apple-touch-icon-120x120.png and also reads apple-touch-icon.png. A missing icon file must not return the page.
 
 ## Do's and Don'ts
 
