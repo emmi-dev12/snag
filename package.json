@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --test sync/library.test.mjs api/_lib/fetchSource.test.ts tests/share.test.ts tests/incoming.test.ts",
+    "test": "node --experimental-strip-types --test sync/library.test.mjs api/_lib/fetchSource.test.ts tests/share.test.ts tests/incoming.test.ts tests/agentCopy.test.ts tests/dropFiles.test.ts tests/syncMerge.test.ts tests/qrRead.test.ts",
     "start": "node sync/server.mjs",
     "sync": "node sync/server.mjs"
   },

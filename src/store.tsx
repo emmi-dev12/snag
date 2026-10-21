@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Hack, HackDraft, HackSource, Verdict } from "./types.ts"
 import * as db from "./db.ts"
 import { makeHack } from "./cards.ts"
-import { persistIncoming } from "./incoming.ts"
+import { fileShared, persistIncoming, takeSharedUrl } from "./incoming.ts"
+import { fetchShared } from "./share.ts"
 import { bindSync, prepareSync, scheduleSync } from "./sync.ts"
 
 type ToastAction = { label: string; run: () => void }
@@ -19,7 +20,7 @@ type Store = {
   updateHack: (id: string, draft: HackDraft) => Promise<void>
   setVerdict: (id: string, verdict: Verdict) => Promise<void>
   deleteHack: (id: string) => Promise<void>
-  importIncoming: (raw: string) => Promise<number>
+  importIncoming: (raw: string, options?: { quiet?: boolean }) => Promise<number>
   keepPending: (id: string) => Promise<Hack | undefined>
   discardPending: (id: string) => Promise<void>
 }
@@ -55,6 +56,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const boot = () => {
       void persistIncoming().then(async () => {
         if (!live) return
+        const shared = takeSharedUrl()
+        if (shared) {
+          try {
+            const filed = await fileShared(await fetchShared(shared))
+            const parts: string[] = []
+            if (filed.updates) parts.push(filed.updates === 1 ? "Updated 1 hack." : `Updated ${filed.updates} hacks.`)
+            if (filed.fresh) parts.push(filed.fresh === 1 ? "1 hack waiting." : `${filed.fresh} hacks waiting.`)
+            if (parts.length) notify(parts.join(" "))
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "That code did not include a card."
+            sessionStorage.setItem("snag.incomingError", message)
+          }
+        }
+        if (!live) return
         await prepareSync()
         await refresh()
         if (!live) return
@@ -72,7 +87,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       unbind()
       window.removeEventListener("hashchange", boot)
     }
-  }, [refresh])
+  }, [notify, refresh])
 
   const value = useMemo<Store>(() => {
     return {
@@ -93,7 +108,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const current = (await db.listHacks()).find((item) => item.id === id)
         if (!current) return
         const next = makeHack(draft, current.source)
-        await db.putHack({ ...current, ...next, id: current.id, createdAt: current.createdAt, verdict: current.verdict, triedAt: current.triedAt, updatedAt: Date.now() })
+        const saved = { ...current, ...next, id: current.id, createdAt: current.createdAt, verdict: current.verdict, triedAt: current.triedAt, updatedAt: Date.now() }
+        if (!next.category) delete saved.category
+        await db.putHack(saved)
         await refresh()
         scheduleSync()
       },
@@ -143,13 +160,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await db.deletePending(id)
         await refresh()
       },
-      async importIncoming(raw) {
-        const { parseIncoming, FILE_LIMIT } = await import("./incoming.ts")
+      async importIncoming(raw, options) {
+        const { parseIncoming, splitIncoming, FILE_LIMIT } = await import("./incoming.ts")
         const items = parseIncoming(raw, { maxLength: FILE_LIMIT })
-        await db.putPending(items)
+        const { updates, fresh } = splitIncoming(await db.listHacks(), items)
+        for (const hack of updates) await db.putHack(hack)
+        if (fresh.length) await db.putPending(fresh)
+        if (updates.length) scheduleSync()
         await refresh()
-        notify(items.length === 1 ? "1 hack waiting." : `${items.length} hacks waiting.`)
-        return items.length
+        if (!options?.quiet) {
+          const parts: string[] = []
+          if (updates.length) parts.push(updates.length === 1 ? "Updated 1 hack." : `Updated ${updates.length} hacks.`)
+          if (fresh.length) parts.push(fresh.length === 1 ? "1 hack waiting." : `${fresh.length} hacks waiting.`)
+          if (parts.length) notify(parts.join(" "))
+        }
+        return updates.length + fresh.length
       },
     }
   }, [dismissToast, hacks, notify, pending, ready, refresh, toast])

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { parseIncoming } from "../src/incoming.ts"
+import { parseIncoming, splitIncoming } from "../src/incoming.ts"
+import type { Hack } from "../src/types.ts"
 
 test("chatgpt aliases and a hacks array import as many cards", () => {
   const raw = JSON.stringify({
@@ -27,6 +28,58 @@ test("chatgpt aliases and a hacks array import as many cards", () => {
   assert.equal(hacks[0]?.steps.length, 3)
   assert.match(hacks[0]?.caveat ?? "", /scrape/)
   assert.equal(hacks[1]?.title, "Salt, then cold water")
+})
+
+test("a matching title updates the drawer and leaves a new title waiting", () => {
+  const saved = {
+    id: "kept",
+    situation: "When a jar lid is too slippery to open",
+    title: "Rubber Band Jar Opener",
+    steps: ["Twist"],
+    caveat: "",
+    tags: ["jars"],
+    verdict: "worked",
+    createdAt: 1,
+    updatedAt: 1,
+  } satisfies Hack
+  const incoming = parseIncoming(
+    JSON.stringify({
+      hacks: [
+        { situation: "When a jar lid is too slippery to open", title: "Rubber Band Jar Opener", steps: ["Wrap a band", "Twist"], category: "kitchen" },
+        { situation: "When you need a coin", title: "Dedicated Trolley Coin", steps: ["Keep a coin"], category: "shopping" },
+      ],
+    }),
+    { maxLength: 400_000 },
+  )
+  const { updates, fresh } = splitIncoming([saved], incoming, 50)
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0]?.id, "kept")
+  assert.equal(updates[0]?.verdict, "worked")
+  assert.equal(updates[0]?.category, "kitchen")
+  assert.equal(updates[0]?.updatedAt, 50)
+  assert.equal(fresh.length, 1)
+  assert.equal(fresh[0]?.title, "Dedicated Trolley Coin")
+})
+
+test("a shared card keeps its photos", () => {
+  const shot = `data:image/jpeg;base64,${"a".repeat(40)}`
+  const raw = JSON.stringify({
+    hacks: [{ situation: "When you need to remove the skin from garlic", title: "Spoon Garlic Peeler", steps: ["Take a garlic clove", "Scrape with a spoon"], cover: shot, pictures: [shot, ""] }],
+  })
+  const [hack] = parseIncoming(raw, { maxLength: 400_000 })
+  assert.equal(hack?.cover, shot)
+  assert.deepEqual(hack?.pictures, [shot])
+})
+
+test("a drawer alias becomes the category", () => {
+  const raw = JSON.stringify({
+    situation: "When the sink is leaking",
+    title: "Shut the water",
+    steps: ["Turn the valve"],
+    drawer: "Home repair",
+  })
+  const [hack] = parseIncoming(raw, { maxLength: 400_000 })
+  assert.equal(hack?.category, "home repair")
 })
 
 test("numbered steps in one string still split", () => {

@@ -10,11 +10,11 @@ Live: **https://snag-hacks.vercel.app** (`snag.vercel.app` was taken)
 
 - A public link (YouTube and others), typed text, audio/video, or an agent
 - Needle on the device turns words into steps
-- Cabinet: untried / worked / failed
+- Cabinet: untried / worked / failed, and a filter for each category
 - One computer keeps `data/library.json`. The other device scans the code on the sync page
 - On a phone: share a YouTube link into Snag
-- Each card can show a QR code. Friends scan it in Snag. Photos stay on your device.
-- Inbox: import a JSON file of many hacks (`hacks`, an array, or JSON Lines)
+- Each card can show a QR code. Friends scan it in Snag. With the cabinet computer on, the photos come with the card. Share several makes one code for a bunch of cards.
+- Inbox: drop or import a JSON file of many hacks (`hacks`, an array, or JSON Lines). Copy the ChatGPT prompt so it replies with that JSON
 
 ## What it does not
 

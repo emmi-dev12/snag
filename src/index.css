@@ -185,6 +185,18 @@ h1 {
   font-size: 2.4rem;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.mark {
+  flex: none;
+  width: 2.15rem;
+  height: 2.15rem;
+}
+
 h2 { margin: 0; font: inherit; }
 
 .lede, .note, .source-line, .caveat {
@@ -244,6 +256,17 @@ code { overflow-wrap: anywhere; }
   box-shadow: inset 0 -2px 0 var(--ink);
 }
 
+.filters.categories { margin-top: 0.15rem; margin-bottom: 0.35rem; }
+
+.fold { margin: 0.2rem 0 0.45rem; }
+.fold summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .sheet {
   position: relative;
   margin-top: 0.85rem;
@@ -286,38 +309,60 @@ code { overflow-wrap: anywhere; }
   opacity: 1;
 }
 
+.card-head {
+  display: flex;
+  align-items: flex-start;
+}
+
+.card-head .card-face { flex: 1; min-width: 0; }
+
+.pick {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0.35rem 0 0 0.15rem;
+}
+
+.pick input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--tab);
+}
+
 .card-face {
   width: 100%;
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
   text-align: left;
   border: 0;
   background: transparent;
-  padding: 0;
+  padding: 0.7rem 0.9rem 0.65rem;
   cursor: pointer;
 }
 
 .card-photo {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 10;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  margin-top: 0.2rem;
   object-fit: cover;
-  border-radius: 7px 7px 0 0;
+  object-position: center;
+  border-radius: 3px;
   background: var(--paper);
 }
 
-.sheet.is-open .card-photo {
-  max-height: 6.5rem;
-  aspect-ratio: auto;
-  height: 6.5rem;
-  object-position: center 42%;
-}
-
 .card-copy {
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 0.75rem;
   align-items: start;
-  padding: 0.85rem 1rem 0.75rem;
+  padding: 0;
 }
 
 .card-title {
@@ -349,6 +394,15 @@ code { overflow-wrap: anywhere; }
 
 .card-copy .verdict-word { grid-column: 2; grid-row: 1; }
 
+.card-category {
+  grid-column: 1;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-family: "Atkinson Hyperlegible", "Segoe UI", sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
 .situation {
   font-size: 1.55rem;
   margin: 0;
@@ -375,10 +429,8 @@ code { overflow-wrap: anywhere; }
 }
 
 .step-pictures img {
-  width: 6.75rem;
-  max-width: 100%;
-  height: 12rem;
-  max-height: 12rem;
+  width: 1.75rem;
+  height: 1.75rem;
   object-fit: cover;
   object-position: center;
 }
@@ -442,10 +494,34 @@ h2.sync-heading { margin-top: 1.75rem; }
 .share-code .pair { margin: 0.75rem 0 0; }
 
 .scan-frame {
+  position: relative;
   overflow: hidden;
   background: var(--paper);
   border: 1px solid var(--rule);
   border-radius: 8px;
+}
+.scan-aim {
+  position: absolute;
+  left: 18%;
+  top: 18%;
+  width: 64%;
+  height: 64%;
+  border: 2px solid var(--sheet);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 45%, transparent);
+  pointer-events: none;
+}
+.scan-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--sheet);
 }
 .scan-video {
   display: block;
@@ -464,6 +540,16 @@ h2.sync-heading { margin-top: 1.75rem; }
 
 .steps li { margin: 0.35rem 0; padding-left: 0.25rem; }
 .steps li::marker { font-weight: 700; }
+.steps li .step-photo {
+  float: left;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0.12rem 0.4rem 0.05rem 0;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 3px;
+  background: var(--paper);
+}
 
 .caveat { margin: 0 0 0.9rem; font-style: italic; }
 
@@ -550,6 +636,21 @@ legend { font-weight: 700; padding: 0; }
 .error {
   margin: 0;
   color: var(--danger);
+  font-weight: 700;
+}
+
+.inbox.is-dropping {
+  outline: 2px solid var(--tab);
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+
+.drop-hint {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--select);
+  color: var(--ink);
+  border-radius: 8px;
   font-weight: 700;
 }
 

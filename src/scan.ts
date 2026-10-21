@@ -2,6 +2,7 @@ import { encodeCard } from "./incoming.ts"
 
 export type ScanHit =
   | { kind: "card"; hash: string }
+  | { kind: "fetch"; url: string }
   | { kind: "sync"; href: string }
   | { kind: "link"; url: string }
   | { kind: "fail"; message: string }
@@ -39,9 +40,10 @@ export function interpretScan(text: string): ScanHit {
   const params = new URLSearchParams(hash)
   if (params.get("card")) return { kind: "card", hash }
   if (params.get("setup")) {
-    const path = url.pathname.endsWith("/sync") || url.pathname === "/sync" ? "/sync" : "/sync"
-    return { kind: "sync", href: `${path}#${hash}` }
+    return { kind: "sync", href: `/sync#${hash}` }
   }
+  const shared = url.pathname.match(/^\/(?:card|pack)\/([A-Za-z0-9_-]{1,80})$/)
+  if (shared) return { kind: "fetch", url: `${url.origin}${url.pathname}` }
   return { kind: "link", url: url.toString() }
 }
 
@@ -53,6 +55,10 @@ export function applyScan(hit: ScanHit) {
   }
   if (hit.kind === "sync") {
     window.location.assign(hit.href)
+    return ""
+  }
+  if (hit.kind === "fetch") {
+    window.location.assign(`/inbox#fetch=${encodeURIComponent(hit.url)}`)
     return ""
   }
   window.location.assign(`/snag?url=${encodeURIComponent(hit.url)}`)

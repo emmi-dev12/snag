@@ -29,6 +29,8 @@
         "caveat": { "type": "string" },
         "warning": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
+        "category": { "type": "string", "description": "One short drawer, such as kitchen. Reuse the same name so the cabinet can filter." },
+        "drawer": { "type": "string" },
         "url": { "type": "string" },
         "link": { "type": "string" }
       }

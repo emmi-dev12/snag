@@ -2,16 +2,16 @@ import { execFile, spawn } from "node:child_process"
 import { randomBytes } from "node:crypto"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { createServer } from "node:http"
-import { dirname } from "node:path"
+import { dirname, join } from "node:path"
 import { pathToFileURL } from "node:url"
-import { handleSync } from "./library.mjs"
+import { authorized, handleSync, readLibrary } from "./library.mjs"
 
 const MAX_BODY = 8_000_000
 const PORT = Number(process.env.PORT || 8787)
 
 const cors = {
   "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, OPTIONS",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
   "access-control-allow-headers": "authorization, content-type, ngrok-skip-browser-warning",
   "access-control-allow-private-network": "true",
   "cache-control": "no-store",
@@ -177,12 +177,42 @@ function readBody(req) {
   })
 }
 
+function packsFile() {
+  const data = process.env.SNAG_DATA || new URL("../data/library.json", import.meta.url).pathname
+  return join(dirname(data), "packs.json")
+}
+
+async function readPacks() {
+  try {
+    const parsed = JSON.parse(await readFile(packsFile(), "utf8"))
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+async function writePacks(packs) {
+  const file = packsFile()
+  await mkdir(dirname(file), { recursive: true })
+  await writeFile(file, `${JSON.stringify(packs)}\n`)
+}
+
 function routeOf(pathname) {
   const path = pathname.replace(/\/+$/, "") || "/"
-  if (path === "/sync" || path.endsWith("/sync")) return "sync"
-  if (path === "/setup" || path.endsWith("/setup")) return "setup"
-  if (path === "/") return "home"
-  return ""
+  const card = /^\/card\/([A-Za-z0-9_-]{1,80})$/.exec(path)
+  if (card) return { kind: "card", id: card[1] }
+  if (path === "/pack") return { kind: "pack" }
+  const pack = /^\/pack\/([A-Za-z0-9_-]{1,80})$/.exec(path)
+  if (pack) return { kind: "pack", id: pack[1] }
+  if (path === "/sync" || path.endsWith("/sync")) return { kind: "sync" }
+  if (path === "/setup" || path.endsWith("/setup")) return { kind: "setup" }
+  if (path === "/") return { kind: "home" }
+  return { kind: "" }
+}
+
+function sendJson(res, status, body) {
+  res.writeHead(status, { "content-type": "application/json; charset=utf-8", ...cors })
+  res.end(JSON.stringify(body))
 }
 
 function landing(share, token) {
@@ -202,12 +232,84 @@ export function createSyncServer(options = {}) {
     void (async () => {
       const url = new URL(req.url || "/", "http://127.0.0.1")
       const route = routeOf(url.pathname)
-      if (!route) {
+      if (!route.kind) {
         res.writeHead(404, { "content-type": "application/json; charset=utf-8", ...cors })
         res.end(JSON.stringify({ ok: false, error: "Sync lives at /sync." }))
         return
       }
-      if (route === "setup" || route === "home") {
+      if (route.kind === "card" || route.kind === "pack") {
+        if (req.method === "OPTIONS") {
+          res.writeHead(204, cors)
+          res.end()
+          return
+        }
+        const library = await readLibrary()
+        if (route.kind === "card") {
+          if (req.method !== "GET") {
+            sendJson(res, 405, { ok: false, error: "Use GET." })
+            return
+          }
+          const hack = library.hacks.find((item) => item.id === route.id)
+          if (!hack) {
+            sendJson(res, 404, { ok: false, error: "That card is not on this computer." })
+            return
+          }
+          sendJson(res, 200, { hacks: [hack] })
+          return
+        }
+        if (req.method === "GET" && route.id) {
+          const packs = await readPacks()
+          const pack = packs[route.id]
+          const ids = pack && Array.isArray(pack.ids) ? pack.ids : null
+          if (!ids) {
+            sendJson(res, 404, { ok: false, error: "That pack is not on this computer." })
+            return
+          }
+          const byId = new Map(library.hacks.map((item) => [item.id, item]))
+          sendJson(res, 200, { hacks: ids.map((id) => byId.get(id)).filter(Boolean) })
+          return
+        }
+        if (req.method !== "POST") {
+          sendJson(res, 405, { ok: false, error: "Use GET or POST." })
+          return
+        }
+        if (!process.env.SYNC_TOKEN) {
+          sendJson(res, 503, { ok: false, error: "Set SYNC_TOKEN on the backend before syncing." })
+          return
+        }
+        if (!authorized(req.headers.authorization || "")) {
+          sendJson(res, 401, { ok: false, error: "That token was refused." })
+          return
+        }
+        let parsed = {}
+        try {
+          parsed = JSON.parse((await readBody(req)) || "{}")
+        } catch {
+          sendJson(res, 400, { ok: false, error: "That pack was not JSON." })
+          return
+        }
+        const ids = (Array.isArray(parsed.ids) ? parsed.ids : [])
+          .filter((id) => typeof id === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(id))
+          .slice(0, 40)
+        const known = new Set(library.hacks.map((item) => item.id))
+        const kept = ids.filter((id) => known.has(id))
+        if (!kept.length) {
+          sendJson(res, 400, { ok: false, error: "Choose a card that is on this computer." })
+          return
+        }
+        const packs = await readPacks()
+        const id = randomBytes(9).toString("base64url")
+        packs[id] = { ids: kept, at: Date.now() }
+        const oldest = Object.entries(packs).sort((a, b) => (a[1]?.at || 0) - (b[1]?.at || 0))
+        while (oldest.length > 80) {
+          const drop = oldest.shift()
+          if (drop) delete packs[drop[0]]
+        }
+        await writePacks(packs)
+        sendJson(res, 200, { ok: true, id, count: kept.length })
+        return
+      }
+      if (route.kind === "setup" || route.kind === "home") {
         if (!localHost(req)) {
           res.writeHead(404, { "content-type": "application/json; charset=utf-8" })
           res.end(JSON.stringify({ ok: false, error: "Sync lives at /sync." }))
@@ -225,7 +327,7 @@ export function createSyncServer(options = {}) {
         }
         const token = process.env.SYNC_TOKEN || ""
         const share = await shareEndpoint(port)
-        if (route === "home") {
+        if (route.kind === "home") {
           res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" })
           res.end(landing(share, token))
           return

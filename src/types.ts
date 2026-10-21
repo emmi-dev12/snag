@@ -17,6 +17,8 @@ export type HackDraft = {
   steps: string[]
   caveat: string
   tags: string[]
+  /** One drawer, such as kitchen. Empty or absent means uncategorized. */
+  category?: string
   /** The page this hack came from. Empty string clears a saved link. */
   link?: string
   cover?: string

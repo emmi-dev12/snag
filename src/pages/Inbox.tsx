@@ -1,6 +1,8 @@
-import { useState, lazy, Suspense, useRef } from "react"
+import { useState, lazy, Suspense, useRef, useEffect, useCallback } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { sourceLabel } from "../cards.ts"
+import { categoryLabel, sourceLabel } from "../cards.ts"
+import { chatgptPrompt } from "../agentCopy.ts"
+import { filesFromTransfer } from "../dropFiles.ts"
 import { sampleJson } from "../incoming.ts"
 import { useStore } from "../store.tsx"
 
@@ -9,14 +11,105 @@ const QrScan = lazy(() => import("../components/QrScan.tsx").then((mod) => ({ de
 const ERROR_KEY = "snag.incomingError"
 
 export function InboxPage() {
-  const { ready, pending, keepPending, discardPending, importIncoming } = useStore()
+  const { ready, hacks, pending, keepPending, discardPending, importIncoming } = useStore()
   const navigate = useNavigate()
   const fileRef = useRef<HTMLInputElement>(null)
   const [dismissed, setDismissed] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [paste, setPaste] = useState("")
   const [importError, setImportError] = useState("")
+  const [copied, setCopied] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [landed, setLanded] = useState("")
   const problem = dismissed ? null : sessionStorage.getItem(ERROR_KEY)
+
+  const takeDropped = useCallback(
+    async (transfer: DataTransfer) => {
+      setImportError("")
+      setLanded("")
+      let files: File[] = []
+      try {
+        files = await filesFromTransfer(transfer)
+      } catch {
+        setImportError("Drop a JSON file.")
+        return
+      }
+      if (!files.length) {
+        setImportError("Drop a JSON file.")
+        return
+      }
+      const errors: string[] = []
+      let total = 0
+      for (const file of files) {
+        try {
+          const count = await importIncoming(await file.text(), { quiet: files.length > 1 })
+          total += count
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "That isn't JSON Snag can read."
+          errors.push(files.length > 1 ? `${file.name}: ${message}` : message)
+        }
+      }
+      if (files.length > 1 && total) setLanded(total === 1 ? "1 hack waiting." : `${total} hacks waiting.`)
+      setImportError(errors.join(" "))
+    },
+    [importIncoming],
+  )
+  const dropRef = useRef(takeDropped)
+  useEffect(() => {
+    dropRef.current = takeDropped
+  }, [takeDropped])
+
+  useEffect(() => {
+    let depth = 0
+
+    function carryingFiles(event: DragEvent) {
+      return [...(event.dataTransfer?.types ?? [])].includes("Files")
+    }
+
+    function enter(event: DragEvent) {
+      if (!carryingFiles(event)) return
+      event.preventDefault()
+      depth += 1
+      setDragging(true)
+    }
+
+    function over(event: DragEvent) {
+      if (!carryingFiles(event)) return
+      event.preventDefault()
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy"
+    }
+
+    function leave(event: DragEvent) {
+      if (!carryingFiles(event)) return
+      depth = Math.max(0, depth - 1)
+      if (depth === 0) setDragging(false)
+    }
+
+    function reset() {
+      depth = 0
+      setDragging(false)
+    }
+
+    async function drop(event: DragEvent) {
+      if (!carryingFiles(event) || !event.dataTransfer) return
+      event.preventDefault()
+      reset()
+      await dropRef.current(event.dataTransfer)
+    }
+
+    window.addEventListener("dragenter", enter)
+    window.addEventListener("dragover", over)
+    window.addEventListener("dragleave", leave)
+    window.addEventListener("drop", drop)
+    window.addEventListener("dragend", reset)
+    return () => {
+      window.removeEventListener("dragenter", enter)
+      window.removeEventListener("dragover", over)
+      window.removeEventListener("dragleave", leave)
+      window.removeEventListener("drop", drop)
+      window.removeEventListener("dragend", reset)
+    }
+  }, [])
 
   async function takeJson(raw: string) {
     setImportError("")
@@ -30,9 +123,14 @@ export function InboxPage() {
   }
 
   return (
-    <>
+    <div className={dragging ? "inbox is-dropping" : "inbox"}>
       <h1>Inbox</h1>
-      <p className="lede">An agent files a hack by opening a link. A friend can show you a code. Or import a JSON file of hacks. They wait here until you keep them.</p>
+      <p className="lede">An agent files a hack by opening a link. A friend can show you a code. Or drop a JSON file of hacks. They wait here until you keep them.</p>
+      {dragging ? (
+        <p className="drop-hint" role="status">
+          Drop the JSON.
+        </p>
+      ) : null}
       {scanning ? (
         <Suspense fallback={<p className="status">Opening the camera.</p>}>
           <QrScan onClose={() => setScanning(false)} />
@@ -44,6 +142,22 @@ export function InboxPage() {
         </button>
         <button type="button" className="quiet" onClick={() => fileRef.current?.click()}>
           Import JSON
+        </button>
+        <button
+          type="button"
+          className="quiet"
+          onClick={() => {
+            const drawers = hacks.map((hack) => hack.category).filter((name): name is string => Boolean(name))
+            void navigator.clipboard.writeText(chatgptPrompt(drawers)).then(
+              () => {
+                setCopied(true)
+                window.setTimeout(() => setCopied(false), 2000)
+              },
+              () => setImportError("Could not copy the prompt."),
+            )
+          }}
+        >
+          {copied ? "Copied" : "Copy the ChatGPT prompt"}
         </button>
       </p>
       <input
@@ -93,6 +207,7 @@ export function InboxPage() {
           </div>
         </form>
       </details>
+      {landed ? <p className="status" role="status">{landed}</p> : null}
       {importError ? (
         <p className="error" role="alert">
           {importError}
@@ -119,7 +234,7 @@ export function InboxPage() {
           <p className="situation">Nothing is waiting.</p>
           <p className="lede">
             <Link to="/agent">Set up filing from an agent</Link>
-            {", or import JSON."}
+            {", or drop a JSON file."}
           </p>
         </div>
       ) : null}
@@ -135,6 +250,7 @@ export function InboxPage() {
             </ol>
           ) : null}
           {hack.caveat ? <p className="caveat">{hack.caveat}</p> : null}
+          {hack.category ? <p className="source-line">{categoryLabel(hack.category)}</p> : null}
           <p className="source-line">{sourceLabel(hack.source)}</p>
           <div className="row-actions">
             <button
@@ -154,6 +270,6 @@ export function InboxPage() {
           </div>
         </article>
       ))}
-    </>
+    </div>
   )
 }

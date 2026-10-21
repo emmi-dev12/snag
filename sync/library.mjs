@@ -29,9 +29,37 @@ export function mergeLibraries(local, remote) {
     const prev = hacks.get(hack.id)
     if (!prev || hack.updatedAt >= prev.updatedAt) hacks.set(hack.id, hack)
   }
+  collapseSameTitles(hacks, removed)
   return {
     hacks: [...hacks.values()],
     removed: [...removed.values()].slice(-MAX_REMOVED),
+  }
+}
+
+function collapseSameTitles(hacks, removed) {
+  const groups = new Map()
+  for (const hack of hacks.values()) {
+    const key = String(hack.title || "").trim().toLowerCase()
+    if (!key) continue
+    const group = groups.get(key)
+    if (group) group.push(hack)
+    else groups.set(key, [hack])
+  }
+  for (const group of groups.values()) {
+    if (group.length < 2) continue
+    let winner = group[0]
+    for (const hack of group.slice(1)) {
+      const newer = hack.updatedAt > winner.updatedAt
+      const tieCover = hack.updatedAt === winner.updatedAt && !winner.cover && hack.cover
+      if (newer || tieCover) winner = hack
+    }
+    for (const hack of group) {
+      if (hack.id === winner.id) continue
+      hacks.delete(hack.id)
+      const at = Math.max(Number(hack.updatedAt) || 0, Number(winner.updatedAt) || 0) + 1
+      const prev = removed.get(hack.id)
+      if (!prev || at > prev.at) removed.set(hack.id, { id: hack.id, at })
+    }
   }
 }
 
@@ -82,11 +110,10 @@ export function sanitizeHack(raw) {
   }
   const pictures = []
   for (const value of Array.isArray(raw.pictures) ? raw.pictures : []) {
-    const shot = image(value)
-    if (!shot || pictures.includes(shot)) continue
-    pictures.push(shot)
-    if (pictures.length === 8) break
+    pictures.push(image(value) || "")
+    if (pictures.length === 12) break
   }
+  while (pictures.length && !pictures[pictures.length - 1]) pictures.pop()
   const cover = image(raw.cover)
   const source = raw.source && typeof raw.source === "object" ? raw.source : undefined
   const kind = source && KINDS.has(source.kind) ? source.kind : undefined
@@ -108,8 +135,10 @@ export function sanitizeHack(raw) {
     createdAt,
     updatedAt,
   }
+  const category = asText(raw.category, 24).replace(/^#/, "").toLowerCase()
+  if (category) hack.category = category
   if (cover) hack.cover = cover
-  if (pictures.length) hack.pictures = pictures
+  if (pictures.some(Boolean)) hack.pictures = pictures
   if (kind || url || label) {
     hack.source = { kind: kind || (url ? "web" : "typed") }
     if (url) hack.source.url = url
@@ -139,6 +168,10 @@ export function sanitizeLibrary(raw) {
     if (removed.length === MAX_REMOVED) break
   }
   return { hacks, removed }
+}
+
+export function authorized(header) {
+  return tokenOk(header, process.env.SYNC_TOKEN || "")
 }
 
 function tokenOk(header, expected) {
@@ -199,7 +232,7 @@ async function upstashCommand(command) {
   return payload.result
 }
 
-async function readLibrary() {
+export async function readLibrary() {
   if (upstash()) {
     const result = await upstashCommand(["GET", KEY])
     if (!result) return emptyLibrary()

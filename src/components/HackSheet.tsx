@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react"
 import type { Hack, HackDraft, Verdict } from "../types.ts"
-import { draftFromHack, draftReady, safeHttpUrl, sourceLabel } from "../cards.ts"
+import { categoryLabel, draftFromHack, draftReady, safeHttpUrl, sourceLabel } from "../cards.ts"
 import { useStore } from "../store.tsx"
 import { DraftForm } from "./DraftForm.tsx"
 import { QrShare } from "./QrShare.tsx"
 
 const verdicts: Verdict[] = ["untried", "worked", "failed"]
 
-export function HackSheet({ hack, open, onToggle, onTag }: { hack: Hack; open: boolean; onToggle: () => void; onTag: (tag: string) => void }) {
+export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onPick }: { hack: Hack; open: boolean; onToggle: () => void; onTag: (tag: string) => void; onCategory: (category: string) => void; picked?: boolean; onPick?: (id: string) => void }) {
   const { updateHack, setVerdict, deleteHack } = useStore()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<HackDraft>(() => draftFromHack(hack))
@@ -25,12 +25,19 @@ export function HackSheet({ hack, open, onToggle, onTag }: { hack: Hack; open: b
 
   return (
     <article className={open ? "sheet is-open" : "sheet"} ref={ref}>
-      <h2>
+      <h2 className={onPick ? "card-head" : undefined}>
+        {onPick ? (
+          <label className="pick">
+            <input type="checkbox" checked={Boolean(picked)} onChange={() => onPick(hack.id)} />
+            <span className="sr-only">Include {hack.title || hack.situation}</span>
+          </label>
+        ) : null}
         <button className="card-face" aria-expanded={open} aria-controls={open ? bodyId : undefined} onClick={onToggle}>
           {hack.cover ? <img className="card-photo" alt="" src={hack.cover} /> : null}
           <span className="card-copy">
             <span className="card-title">{hack.title || hack.situation}</span>
             {hack.situation && hack.situation !== hack.title ? <span className="card-blurb">{hack.situation}</span> : null}
+            {hack.category ? <span className="card-category">{categoryLabel(hack.category)}</span> : null}
             <span className={`verdict-word is-${hack.verdict}`}>{hack.verdict === "untried" ? "Untried" : hack.verdict === "worked" ? "Worked" : "Failed"}</span>
           </span>
         </button>
@@ -58,21 +65,24 @@ export function HackSheet({ hack, open, onToggle, onTag }: { hack: Hack; open: b
           />
         ) : (
           <>
-            {hack.pictures?.length ? (
-              <div className="step-pictures">
-                {hack.pictures.map((src, index) => (
-                  <img key={`${hack.id}-pic-${index}`} src={src} alt={`Picture ${index + 1} for ${hack.title || hack.situation}`} />
-                ))}
-              </div>
-            ) : null}
             {hack.steps.length ? (
               <ol className="steps">
                 {hack.steps.map((step, index) => (
-                  <li key={`${hack.id}-${index}`}>{step}</li>
+                  <li key={`${hack.id}-${index}`}>
+                    {hack.pictures?.[index] ? <img className="step-photo" src={hack.pictures[index]} alt="" /> : null}
+                    <span>{step}</span>
+                  </li>
                 ))}
               </ol>
             ) : null}
             {hack.caveat ? <p className="caveat">{hack.caveat}</p> : null}
+            {hack.category ? (
+              <p className="note">
+                <button type="button" className="tag" onClick={() => onCategory(hack.category ?? "")}>
+                  {categoryLabel(hack.category)}
+                </button>
+              </p>
+            ) : null}
             {hack.tags.length ? (
               <div className="tags">
                 {hack.tags.map((tag) => (

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import test from "node:test"
 import { createSyncServer } from "./server.mjs"
-import { handleSync, mergeLibraries } from "./library.mjs"
+import { handleSync, mergeLibraries, sanitizeHack } from "./library.mjs"
 
 function hack(id, updatedAt, title = id) {
   return {
@@ -29,6 +29,41 @@ test("a newer edit wins, and a later delete stays deleted", () => {
   )
   assert.deepEqual(merged.hacks.map((item) => item.id), ["b"])
   assert.equal(merged.removed[0].id, "a")
+})
+
+test("a blank step picture keeps the next picture on its own step", () => {
+  const shot = `data:image/jpeg;base64,${"a".repeat(40)}`
+  const kept = sanitizeHack({ ...hack("a", 1), steps: ["One", "Two", "Three"], pictures: ["", shot, shot] })
+  assert.deepEqual(kept.pictures, ["", shot, shot])
+})
+
+test("a category survives a sync and a blank one is dropped", () => {
+  const kept = sanitizeHack({ ...hack("a", 1), category: "Kitchen" })
+  assert.equal(kept.category, "kitchen")
+  const blank = sanitizeHack({ ...hack("b", 1), category: "   " })
+  assert.equal(blank.category, undefined)
+})
+
+test("the same title on two devices becomes one card", () => {
+  const merged = mergeLibraries(
+    { hacks: [hack("phone", 2, "Spoon Garlic Peeler")], removed: [] },
+    { hacks: [hack("desk", 5, "Spoon Garlic Peeler")], removed: [] },
+  )
+  assert.deepEqual(merged.hacks.map((item) => item.id), ["desk"])
+  assert.equal(merged.removed.find((item) => item.id === "phone").at, 6)
+  const again = mergeLibraries(merged, { hacks: [hack("phone", 2, "Spoon Garlic Peeler")], removed: [] })
+  assert.deepEqual(again.hacks.map((item) => item.id), ["desk"])
+})
+
+test("an equal title keeps the card that has a photo", () => {
+  const shot = `data:image/jpeg;base64,${"a".repeat(40)}`
+  const merged = mergeLibraries(
+    { hacks: [{ ...hack("phone", 3, "Same"), cover: shot }], removed: [] },
+    { hacks: [hack("desk", 3, "Same")], removed: [] },
+  )
+  assert.equal(merged.hacks.length, 1)
+  assert.equal(merged.hacks[0].id, "phone")
+  assert.equal(merged.hacks[0].cover, shot)
 })
 
 test("an edit after a delete brings the card back", () => {
@@ -99,6 +134,50 @@ test("setup is only offered to this computer", async () => {
     assert.equal(remote.body.includes("desk-token"), false)
   } finally {
     await new Promise((resolve) => server.close(resolve))
+    delete process.env.SNAG_NO_SHARE
+  }
+})
+
+test("a card code and a pack code return those hacks with photos", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "snag-pack-"))
+  const shot = `data:image/jpeg;base64,${"b".repeat(40)}`
+  process.env.SNAG_DATA = join(dir, "library.json")
+  process.env.SYNC_TOKEN = "desk-token"
+  process.env.SNAG_NO_SHARE = "1"
+  delete process.env.UPSTASH_REDIS_REST_URL
+  delete process.env.UPSTASH_REDIS_REST_TOKEN
+  delete process.env.VERCEL
+  delete process.env.RENDER
+  const server = createSyncServer()
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
+  const { port } = server.address()
+  const headers = { authorization: "Bearer desk-token", "content-type": "application/json" }
+  try {
+    const card = { ...hack("garlic", 1, "Spoon Garlic Peeler"), cover: shot }
+    const put = await fetch(`http://127.0.0.1:${port}/sync`, { method: "PUT", headers, body: JSON.stringify({ hacks: [card], removed: [] }) })
+    assert.equal(put.status, 200)
+    const one = await fetch(`http://127.0.0.1:${port}/card/garlic`)
+    const oneBody = await one.json()
+    assert.equal(one.status, 200)
+    assert.equal(oneBody.hacks[0].cover, shot)
+    assert.equal(JSON.stringify(oneBody).includes("desk-token"), false)
+    const missing = await fetch(`http://127.0.0.1:${port}/card/nope`)
+    assert.equal(missing.status, 404)
+    const refused = await fetch(`http://127.0.0.1:${port}/pack`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ids: ["garlic"] }) })
+    assert.equal(refused.status, 401)
+    const made = await fetch(`http://127.0.0.1:${port}/pack`, { method: "POST", headers, body: JSON.stringify({ ids: ["garlic", "missing"] }) })
+    const madeBody = await made.json()
+    assert.equal(made.status, 200)
+    const pack = await fetch(`http://127.0.0.1:${port}/pack/${madeBody.id}`)
+    const packBody = await pack.json()
+    assert.equal(pack.status, 200)
+    assert.equal(packBody.hacks.length, 1)
+    assert.equal(packBody.hacks[0].cover, shot)
+    assert.equal(JSON.stringify(packBody).includes("desk-token"), false)
+  } finally {
+    await new Promise((resolve) => server.close(resolve))
+    await rm(dir, { recursive: true, force: true })
+    delete process.env.SNAG_DATA
     delete process.env.SNAG_NO_SHARE
   }
 })

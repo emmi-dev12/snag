@@ -11,6 +11,7 @@ export function draftFromHack(hack: Hack): HackDraft {
     steps: hack.steps.length ? [...hack.steps] : [""],
     caveat: hack.caveat,
     tags: [...hack.tags],
+    category: hack.category ?? "",
     cover: hack.cover,
     pictures: hack.pictures ? [...hack.pictures] : undefined,
     link: hack.source?.url ?? "",
@@ -21,6 +22,14 @@ const TAG_LIMIT = 8
 
 function cleanTag(tag: string) {
   return tag.replace(/^#/, "").replace(/\s+/g, " ").trim().toLowerCase()
+}
+
+export function cleanCategory(value: string | undefined) {
+  return (value ?? "").replace(/^#/, "").replace(/\s+/g, " ").trim().toLowerCase().slice(0, 24)
+}
+
+export function categoryLabel(category: string) {
+  return category.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())
 }
 
 function cleanImage(value: string | undefined) {
@@ -36,12 +45,11 @@ function cleanPictures(values: string[] | undefined) {
   if (!values?.length) return undefined
   const pictures: string[] = []
   for (const value of values) {
-    const image = cleanImage(value)
-    if (!image || pictures.includes(image)) continue
-    pictures.push(image)
-    if (pictures.length === 8) break
+    pictures.push(cleanImage(value) ?? "")
+    if (pictures.length === 12) break
   }
-  return pictures.length ? pictures : undefined
+  while (pictures.length && !pictures[pictures.length - 1]) pictures.pop()
+  return pictures.some(Boolean) ? pictures : undefined
 }
 
 export function mergeTags(groups: string[][]) {
@@ -89,6 +97,8 @@ export function cleanDraft(draft: HackDraft): HackDraft {
     cover,
     pictures,
   }
+  const category = cleanCategory(draft.category)
+  if (category) clean.category = category
   if ("link" in draft) clean.link = safeHttpUrl(draft.link) ?? ""
   return clean
 }
@@ -115,12 +125,14 @@ export function coerceHack(raw: unknown): HackDraft | null {
     .map((tag) => asString(tag, 24).toLowerCase())
     .filter(Boolean)
     .slice(0, 8)
+  const category = cleanCategory(asString(record.category, 24))
   return {
     situation: situation || title,
     title: title || situation,
     steps,
     caveat: asString(record.caveat, 240),
     tags,
+    ...(category ? { category } : {}),
   }
 }
 
@@ -143,6 +155,7 @@ export function makeHack(draft: HackDraft, source?: HackSource): Hack {
   const clean = cleanDraft(draft)
   const fields = { ...clean }
   delete fields.link
+  if (!fields.category) delete fields.category
   const now = Date.now()
   return {
     ...fields,
@@ -180,7 +193,7 @@ export function safeHttpUrl(value?: string) {
 }
 
 export function haystack(hack: Hack) {
-  return [hack.situation, hack.title, hack.caveat, hack.steps.join(" "), hack.tags.join(" "), hack.source?.url ?? ""].join("\n").toLowerCase()
+  return [hack.situation, hack.title, hack.caveat, hack.steps.join(" "), hack.tags.join(" "), hack.category ?? "", hack.source?.url ?? ""].join("\n").toLowerCase()
 }
 
 const HACK_SCHEMA = {
@@ -195,6 +208,7 @@ const HACK_SCHEMA = {
     },
     caveat: { type: "string", description: "The way it goes wrong. Empty string if none." },
     tags: { type: "array", items: { type: "string" }, description: "Up to three short topics." },
+    category: { type: "string", description: "One short drawer name, such as kitchen or laundry. Reuse a name for the same kind of job." },
   },
   required: ["situation", "title", "steps", "caveat", "tags"],
 } as const
@@ -208,4 +222,5 @@ export const NEEDLE_SYSTEM = [
   "steps are the actions in order, including a don't when the source says not to do something.",
   "Do not invent tools or steps that were not mentioned.",
   "caveat is the failure the source mentions, or an empty string.",
+  "category is one short drawer name, reused for the same kind of job, or an empty string.",
 ].join(" ")

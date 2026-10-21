@@ -106,6 +106,11 @@ function onThisComputer() {
   return host === "localhost" || host === "127.0.0.1" || host === "[::1]"
 }
 
+export function linkCodeStartsOpen(host: string, hash: string, deskReachable: boolean) {
+  const local = host === "localhost" || host === "127.0.0.1" || host === "[::1]"
+  return local || hash.startsWith("#setup=") || deskReachable
+}
+
 export async function prepareSync() {
   const paired = readSetupHash()
   if (paired) {
@@ -193,7 +198,7 @@ function acceptRemoval(raw: unknown): Removal | null {
   return at ? { id: record.id, at } : null
 }
 
-function merge(local: Library, remote: Library): Library {
+export function mergeLibraries(local: Library, remote: Library): Library {
   const removed = new Map<string, Removal>()
   for (const item of [...local.removed, ...remote.removed]) {
     const prev = removed.get(item.id)
@@ -206,7 +211,36 @@ function merge(local: Library, remote: Library): Library {
     const prev = hacks.get(hack.id)
     if (!prev || hack.updatedAt >= prev.updatedAt) hacks.set(hack.id, hack)
   }
+  collapseSameTitles(hacks, removed)
   return { hacks: [...hacks.values()], removed: [...removed.values()].slice(-500) }
+}
+
+function collapseSameTitles(hacks: Map<string, Hack>, removed: Map<string, Removal>) {
+  const groups = new Map<string, Hack[]>()
+  for (const hack of hacks.values()) {
+    const key = hack.title.trim().toLowerCase()
+    if (!key) continue
+    const group = groups.get(key)
+    if (group) group.push(hack)
+    else groups.set(key, [hack])
+  }
+  for (const group of groups.values()) {
+    if (group.length < 2) continue
+    let winner = group[0]
+    if (!winner) continue
+    for (const hack of group.slice(1)) {
+      const newer = hack.updatedAt > winner.updatedAt
+      const tieCover = hack.updatedAt === winner.updatedAt && !winner.cover && hack.cover
+      if (newer || tieCover) winner = hack
+    }
+    for (const hack of group) {
+      if (hack.id === winner.id) continue
+      hacks.delete(hack.id)
+      const at = Math.max(hack.updatedAt || 0, winner.updatedAt || 0) + 1
+      const prev = removed.get(hack.id)
+      if (!prev || at > prev.at) removed.set(hack.id, { id: hack.id, at })
+    }
+  }
 }
 
 async function localLibrary(): Promise<Library> {
@@ -247,7 +281,7 @@ async function runSync(): Promise<SyncResult> {
     hacks: remoteRaw.hacks.map(acceptHack).filter((hack): hack is Hack => Boolean(hack)),
     removed: (Array.isArray(remoteRaw.removed) ? remoteRaw.removed : []).map(acceptRemoval).filter((item): item is Removal => Boolean(item)),
   }
-  const merged = merge(await localLibrary(), remote)
+  const merged = mergeLibraries(await localLibrary(), remote)
   const body = JSON.stringify(merged)
   if (body.length > MAX_BODY) return { ok: false, message: "This cabinet is too big to sync. Remove a few pictures and try again." }
   let saved: Response
@@ -267,7 +301,7 @@ async function runSync(): Promise<SyncResult> {
   }
   // A card saved while this request was in flight must stay, then go up on the next sync.
   const during = await localLibrary()
-  const reconciled = merge(during, finalLibrary)
+  const reconciled = mergeLibraries(during, finalLibrary)
   await db.replaceLibrary(reconciled.hacks, reconciled.removed)
   onChange()
   if (aheadOf(during, finalLibrary)) scheduleSync()

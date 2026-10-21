@@ -167,6 +167,15 @@ export function DraftForm({ value, onChange, onSubmit, onCancel, submitLabel, ca
         <span>Where it goes wrong</span>
         <textarea id={`${base}-caveat`} value={value.caveat} onChange={(event) => set({ caveat: event.target.value })} />
       </label>
+      <label className="field" htmlFor={`${base}-category`}>
+        <span>Category</span>
+        <input
+          id={`${base}-category`}
+          value={value.category ?? ""}
+          placeholder="kitchen"
+          onChange={(event) => set({ category: event.target.value })}
+        />
+      </label>
       <label className="field" htmlFor={`${base}-tags`}>
         <span>Tags</span>
         <input

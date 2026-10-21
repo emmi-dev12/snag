@@ -10,11 +10,11 @@ DE · [EN](README.en.md)
 
 - Link (YouTube und andere öffentliche Seiten), Text, Audio/Video, oder ein Agent
 - Needle auf dem Gerät macht daraus Schritte
-- Cabinet: untried / worked / failed
+- Cabinet: untried / worked / failed, und ein Filter pro Kategorie
 - Ein Computer hält `data/library.json`. Das andere Gerät scannt den Code auf der Sync-Seite
 - Vom Telefon: YouTube-Link in Snag teilen
 - Jede Karte kann einen QR-Code zeigen. Freunde scannen ihn in Snag. Fotos bleiben auf deinem Gerät.
-- Inbox: JSON-Datei mit vielen Hacks importieren (`hacks`, Array, oder JSON Lines)
+- Inbox: JSON-Datei mit vielen Hacks ablegen oder importieren (`hacks`, Array, oder JSON Lines). ChatGPT-Prompt kopieren, Antwort hier einfügen
 
 ## Was es nicht tut
 

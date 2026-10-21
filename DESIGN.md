@@ -186,7 +186,7 @@ Workshop paper, a lighter sheet, near-black ink, and one orange filing tab. Stat
 
 One column, `spacing.column` wide, centered. Page padding is `spacing.column-pad`, and 2rem from 800px wide. The bottom bar is fixed, three equal columns, and the column keeps `spacing.nav-clearance` plus the safe-area inset so the last control clears it.
 
-Cards stack with 0.85rem between them. An open card adds space above itself so the tab has room. The photo, when there is one, is the full width of the sheet, 16:10, cropped. An open card shortens that photo to 6.5rem so the procedure, the verdict, and Edit and Delete stay in the first view. The title, the short description, and the verdict sit under the photo. Search and filters sit under the app name, before the cards.
+Cards stack with 0.85rem between them. An open card adds space above itself so the tab has room. The photo, when there is one, is a 2rem square in the top-left of the card, cropped. The title, the short description, and the verdict stay the main thing and sit beside it. Search and the verdict filters sit under the app name, before the cards. Drawers fold away under a Drawers disclosure. When one drawer is on, its name stays on that disclosure. An open card keeps that same small photo. A step picture is a 1.75rem square at the top-left of its step, and only when that step is the object. The words stay the main thing. Share this card, the pack code, and the link code each fold away. On the computer that keeps the cabinet, the link code starts open. Sync always shows Link to an existing computer and This is that computer.
 
 ## Elevation & Depth
 
@@ -198,7 +198,7 @@ The system is flat. A sheet is lighter than the paper, and an open card grows a 
 
 ## Shapes
 
-Controls, fields, search, and the toast use a short corner (`rounded.control`). The sheet and the instruction block use a slightly longer corner (`rounded.sheet`). The filing tab is a 4.5rem by 12px slab with the top corners rounded (`rounded.tab`), sitting 11px above the open sheet, 1rem from its left edge. The photo's top corners (`rounded.photo`) sit inside that border. An offered picture uses `rounded.offer` inside its control. The progress track is a pill (`rounded.pill`).
+Controls, fields, search, and the toast use a short corner (`rounded.control`). The sheet and the instruction block use a slightly longer corner (`rounded.sheet`). The filing tab is a 4.5rem by 12px slab with the top corners rounded (`rounded.tab`), sitting 11px above the open sheet, 1rem from its left edge. A kept photo uses a 3px corner. An offered picture uses `rounded.offer` inside its control. The progress track is a pill (`rounded.pill`).
 
 ## Components
 
@@ -221,15 +221,16 @@ The verdict is a row of radio buttons: Untried, Worked, Failed. The chosen one t
 - **Background:** Sheet, hairline Rule.
 - **Shadow Strategy:** none. See the Flat Sheet Rule.
 - **Border:** 1px Rule.
-- **Internal Padding:** the photo is flush to the sheet. The title block is padded `0.85rem 1rem 0.75rem`. The open procedure is padded `0 1rem`.
-- **Collapsed:** one photo when `cover` exists, then the title, the short description (the situation, clamped to three lines), and the verdict word. The whole face is one button.
-- **Open:** the orange tab rises from the sheet edge. The card photo shortens to 6.5rem. Under the face: each chosen picture is a centered 9:16 crop, 6.75rem by 12rem, so a vertical frame fills the picture. Then a numbered list of steps, an italic caveat, tag buttons, the source line (the saved URL when there is one), the verdict radios, Edit, and Delete. Those controls sit in that first view. A long URL wraps. It does not get its own section.
+- **Internal Padding:** the face is padded `0.7rem 0.9rem 0.65rem`. The open procedure is padded `0 1rem`.
+- **Collapsed:** a 2rem photo in the top-left when `cover` exists. The title, the short description (the situation, clamped to three lines), and the verdict word are the main thing. The whole face is one button.
+- **Open:** the orange tab rises from the sheet edge. The card photo stays 2rem in the top-left. Under the face: a step picture, when that step has one, is a 1.75rem square at the top-left of the step, and the step sentence is the main thing. Then an italic caveat, tag buttons, the source line (the saved URL when there is one), a folded Share this card, the verdict radios, Edit, and Delete. A long URL wraps. It does not get its own section.
 
 ### Inputs / Fields
 
 - **Style:** 1px Rule, Paper fill, `rounded.control`, 48px minimum, padding `0.7rem 0.8rem`. Labels are visible and sit above the field.
 - **Focus:** the shared 2px Ink outline. The caret is Index Orange.
 - **Error:** Failed Red, Atkinson 700, in an alert. It names what to write.
+- **Drop:** dragging a JSON file over the inbox draws a 2px Index Orange outline around the column and one line, "Drop the JSON." A folder of JSON files lands in name order.
 
 Search is a Sheet field with a 20px icon, a transparent input, and a Muted Ink placeholder.
 
@@ -239,7 +240,7 @@ A fixed bottom bar on Nav, hairline Rule on top, three links: Cabinet, Snag, Inb
 
 ### Index card
 
-The signature is the tab. It is absent while the card is closed. Opening the card raises it once from the sheet edge, 420ms, ease-out. Reduced motion snaps it into place. The photo does not grow a frame of its own. A missing photo does not leave a gray slot.
+The signature is the tab. It is absent while the card is closed. Opening the card raises it once from the sheet edge, 420ms, ease-out. Reduced motion snaps it into place. The photo does not grow a frame of its own. A missing photo does not leave a gray slot. The app mark is that tab on a sheet, beside the cabinet name. On the home screen the sheet fills the tile, and the touch icon is apple-touch-icon-180.png.
 
 ## Do's and Don'ts
 
@@ -248,7 +249,7 @@ The signature is the tab. It is absent while the card is closed. Opening the car
 - **Do** keep one column, the sheet on the paper, and the orange tab as the only ornament.
 - **Do** set the card title in Anybody Condensed and the short description in Atkinson.
 - **Do** leave a card text-only when no photo was kept.
-- **Do** show chosen pictures inside the open procedure, in the order they were kept, as a centered 9:16 crop so the frame reads and the blurred side bars do not.
+- **Do** show a kept picture as a small square at the top-left, in the order it was kept, so the words stay the main thing.
 - **Do** keep targets at least 44px, focus visible, and steps in a real numbered list.
 
 ### Don't:

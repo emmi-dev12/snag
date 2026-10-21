@@ -8,7 +8,7 @@ Schema: https://snag-hacks.vercel.app/snag.schema.json
 
 ## JSON (preferred for many hacks)
 
-Write a file and import it in Inbox. One file may contain many hacks. Do not invent steps. No photos.
+Write a file and import it in Inbox. One file may contain many hacks. Do not invent steps. No photos. When asked for every hack in a chat, reply with the JSON only, no code fence. The first character is {. No heading. A url is a plain https:// address. Do not put a backslash before : . or /. At most 80 hacks in one object. steps at most 12. tags at most 8. category is one or two lowercase words, at most 24 characters. If Snag says "That isn't JSON Snag can read.", return the same hacks as corrected raw JSON and no other text.
 
 ```
 {
@@ -18,6 +18,7 @@ Write a file and import it in Inbox. One file may contain many hacks. Do not inv
       "title": "short name",
       "steps": ["one action", "the next action"],
       "caveat": "",
+      "category": "kitchen",
       "tags": ["topic"],
       "url": "https://the-page"
     }
@@ -25,7 +26,8 @@ Write a file and import it in Inbox. One file may contain many hacks. Do not inv
 }
 ```
 
-Aliases: when/situation, name/title, instructions/steps, warning/caveat, topics/tags, link/url.
+category is one short drawer. Reuse the same name so the cabinet can filter. Alias: drawer.
+Aliases: when/situation, name/title, instructions/steps, warning/caveat, topics/tags, link/url, drawer/category.
 A JSON array, or JSON Lines (one object per line), is also fine.
 
 ## Agent filing (one hack as a link)

@@ -1,6 +1,7 @@
 import type { Hack, HackDraft, HackSource, SourceKind } from "./types.ts"
-import { cleanDraft, coerceHack, safeHttpUrl } from "./cards.ts"
-import { putPending } from "./db.ts"
+import { cleanCategory, cleanDraft, coerceHack, safeHttpUrl } from "./cards.ts"
+import { listHacks, putHack, putPending } from "./db.ts"
+import { scheduleSync } from "./sync.ts"
 
 const SAMPLE: HackDraft & { source: HackSource } = {
   situation: "When a wine stain is still wet",
@@ -8,6 +9,7 @@ const SAMPLE: HackDraft & { source: HackSource } = {
   steps: ["Cover the stain with a pile of salt", "Let it sit for ten minutes", "Rinse from the back with cold water"],
   caveat: "Hot water sets the stain.",
   tags: ["laundry"],
+  category: "laundry",
   source: { kind: "agent", label: "sample" },
 }
 
@@ -62,13 +64,15 @@ export function flattenIncoming(raw: unknown): unknown {
       safeHttpUrl(typeof record.url === "string" ? record.url : undefined) ||
       safeHttpUrl(typeof record.link === "string" ? record.link : undefined) ||
       safeHttpUrl(typeof nested.url === "string" ? nested.url : undefined)
-    return url ? { ...record, url, link: url } : record
+    const category = cleanCategory(firstString(record, ["category", "drawer", "group"], 24))
+    return { ...record, ...(url ? { url, link: url } : {}), ...(category ? { category } : {}) }
   }
   const situation = firstString(record, ["situation", "when", "moment", "use_when", "useWhen", "for"], 180)
   const title = firstString(record, ["title", "name", "hack", "summary", "headline"], 80)
   const steps = asSteps(record.steps ?? record.instructions ?? record.procedure ?? record.actions ?? record.how)
   const caveat = firstString(record, ["caveat", "warning", "watch_out", "watchOut", "gotcha", "dont", "don't", "note"], 240)
   const tags = asTags(record.tags ?? record.topics ?? record.labels)
+  const category = cleanCategory(firstString(record, ["category", "drawer", "group"], 24))
   const url =
     safeHttpUrl(typeof record.url === "string" ? record.url : undefined) ||
     safeHttpUrl(typeof record.link === "string" ? record.link : undefined) ||
@@ -81,6 +85,7 @@ export function flattenIncoming(raw: unknown): unknown {
     steps,
     caveat,
     tags,
+    ...(category ? { category } : {}),
     ...(url ? { url, link: url } : {}),
     source: {
       kind: "agent",
@@ -138,7 +143,7 @@ function toPending(value: unknown): Hack | null {
   const flat = flattenIncoming(value)
   const draft = coerceHack(flat)
   if (!draft) return null
-  const clean = cleanDraft(draft)
+  const clean = cleanDraft(withPictures(flat, draft))
   if (!clean.situation) return null
   let source = flat && typeof flat === "object" ? sourceOf((flat as { source?: unknown }).source) : undefined
   if (flat && typeof flat === "object") {
@@ -162,6 +167,18 @@ function toPending(value: unknown): Hack | null {
   }
 }
 
+function withPictures(flat: unknown, draft: HackDraft): HackDraft {
+  if (!flat || typeof flat !== "object") return draft
+  const record = flat as { cover?: unknown; pictures?: unknown }
+  const cover = typeof record.cover === "string" ? record.cover : ""
+  const pictures = Array.isArray(record.pictures) ? record.pictures.filter((item): item is string => typeof item === "string") : []
+  return {
+    ...draft,
+    ...(cover ? { cover } : {}),
+    ...(pictures.length ? { pictures } : {}),
+  }
+}
+
 function listFrom(data: unknown): unknown[] {
   if (Array.isArray(data)) return data
   if (data && typeof data === "object") {
@@ -171,6 +188,35 @@ function listFrom(data: unknown): unknown[] {
     }
   }
   return [data]
+}
+
+export function splitIncoming(existing: Hack[], incoming: Hack[], now = Date.now()) {
+  const byTitle = new Map(existing.map((hack) => [hack.title.trim().toLowerCase(), hack]))
+  const updates: Hack[] = []
+  const fresh: Hack[] = []
+  for (const item of incoming) {
+    const key = item.title.trim().toLowerCase()
+    const prev = byTitle.get(key)
+    if (!prev) {
+      fresh.push(item)
+      continue
+    }
+    const next: Hack = {
+      ...prev,
+      situation: item.situation || prev.situation,
+      steps: item.steps.length ? item.steps : prev.steps,
+      caveat: item.caveat,
+      tags: item.tags.length ? item.tags : prev.tags,
+      updatedAt: now,
+    }
+    if (item.category) next.category = item.category
+    if (item.cover) next.cover = item.cover
+    if (item.pictures?.length) next.pictures = item.pictures
+    if (item.source?.url) next.source = { ...(prev.source ?? { kind: "agent" }), url: item.source.url }
+    updates.push(next)
+    byTitle.set(key, next)
+  }
+  return { updates, fresh }
 }
 
 export function parseIncoming(raw: string, options?: { maxLength?: number }) {
@@ -218,6 +264,7 @@ export function sampleJson() {
           steps: ["Take it off the heat", "Splash in a little water", "Cover for five minutes"],
           warning: "Don't scrape while it's dry.",
           tags: ["kitchen"],
+          drawer: "kitchen",
         },
       ],
     },
@@ -236,6 +283,29 @@ function takeHash() {
 }
 
 let chain = Promise.resolve()
+
+export async function fileShared(raw: string) {
+  const items = parseIncoming(raw, { maxLength: 6_000_000 })
+  const { updates, fresh } = splitIncoming(await listHacks(), items)
+  for (const hack of updates) await putHack(hack)
+  if (fresh.length) await putPending(fresh)
+  if (updates.length) scheduleSync()
+  return { updates: updates.length, fresh: fresh.length }
+}
+
+export function takeSharedUrl() {
+  const raw = new URLSearchParams(window.location.hash.slice(1)).get("fetch")
+  if (!raw) return ""
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`)
+  try {
+    const url = new URL(raw)
+    if (url.protocol !== "https:" && url.protocol !== "http:") return ""
+    if (!/^\/(?:card|pack)\/[A-Za-z0-9_-]{1,80}$/.test(url.pathname)) return ""
+    return `${url.origin}${url.pathname}`
+  } catch {
+    return ""
+  }
+}
 
 export function persistIncoming() {
   const raw = takeHash()
