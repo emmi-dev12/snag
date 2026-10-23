@@ -11,6 +11,7 @@ DE · [EN](README.en.md)
 - Link (YouTube und andere öffentliche Seiten), Text, Audio/Video, oder ein Agent
 - Needle auf dem Gerät macht daraus Schritte
 - Cabinet: untried / worked / failed, und ein Filter pro Kategorie
+- Eine offene Karte hält den aktuellen Schritt über der Leiste. Zurück und Weiter gehen die Schritte durch. Der letzte Schritt markiert Worked oder Failed. Die Pfeiltasten links und rechts tun dasselbe.
 - Ein Computer hält `data/library.json`. Das andere Gerät scannt den Code auf der Sync-Seite
 - Vom Telefon: YouTube-Link in Snag teilen
 - Jede Karte kann einen QR-Code zeigen. Freunde scannen ihn in Snag. Fotos bleiben auf deinem Gerät.

@@ -13,12 +13,56 @@ export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onP
   const [draft, setDraft] = useState<HackDraft>(() => draftFromHack(hack))
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState("")
+  const followKey = open ? hack.id : ""
+  const [follow, setFollow] = useState({ key: followKey, step: 0, moved: false })
+  if (follow.key !== followKey) setFollow({ key: followKey, step: 0, moved: false })
+  const step = follow.step
+  const moved = follow.moved
   const ref = useRef<HTMLElement>(null)
+  const nowRef = useRef<HTMLLIElement>(null)
   const bodyId = useId()
+  const following = open && !editing && hack.steps.length > 0
+  const index = Math.min(step, Math.max(0, hack.steps.length - 1))
+  const last = index >= hack.steps.length - 1
 
   useEffect(() => {
     if (open) ref.current?.scrollIntoView({ block: "start" })
   }, [open])
+
+  useEffect(() => {
+    if (!following) return
+    document.documentElement.dataset.follow = "1"
+    return () => {
+      delete document.documentElement.dataset.follow
+    }
+  }, [following])
+
+  useEffect(() => {
+    if (!moved) return
+    nowRef.current?.scrollIntoView({ block: "nearest" })
+  }, [index, moved])
+
+  useEffect(() => {
+    if (!following) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return
+      event.preventDefault()
+      const dir = event.key === "ArrowRight" ? 1 : -1
+      setFollow((current) => {
+        const at = Math.min(current.step, hack.steps.length - 1)
+        return { ...current, moved: true, step: Math.min(hack.steps.length - 1, Math.max(0, at + dir)) }
+      })
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [following, hack.steps.length])
+
+  function go(next: number) {
+    setFollow((current) => ({ ...current, moved: true, step: Math.min(hack.steps.length - 1, Math.max(0, next)) }))
+  }
 
   const href = safeHttpUrl(hack.source?.url)
   const label = sourceLabel(hack.source)
@@ -67,10 +111,10 @@ export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onP
           <>
             {hack.steps.length ? (
               <ol className="steps">
-                {hack.steps.map((step, index) => (
-                  <li key={`${hack.id}-${index}`}>
-                    {hack.pictures?.[index] ? <img className="step-photo" src={hack.pictures[index]} alt="" /> : null}
-                    <span>{step}</span>
+                {hack.steps.map((line, item) => (
+                  <li key={`${hack.id}-${item}`} className={item === index ? "is-now" : undefined} aria-current={item === index ? "step" : undefined} ref={item === index ? nowRef : undefined}>
+                    {hack.pictures?.[item] ? <img className="step-photo" src={hack.pictures[item]} alt="" /> : null}
+                    <span>{line}</span>
                   </li>
                 ))}
               </ol>
@@ -138,6 +182,47 @@ export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onP
                 </button>
               )}
             </div>
+            {following ? (
+              <div className="follow" role="region" aria-label="Follow this hack">
+                <div className="follow-inner">
+                  <p className="follow-count">{index + 1} of {hack.steps.length}</p>
+                  <p className="follow-line" aria-live="polite">
+                    <span className="sr-only">Step {index + 1} of {hack.steps.length}. </span>
+                    {hack.pictures?.[index] ? <img className="step-photo" src={hack.pictures[index]} alt="" /> : null}
+                    {hack.steps[index]}
+                  </p>
+                  <div className="follow-actions">
+                    <button type="button" className="quiet" disabled={index === 0} onClick={() => go(index - 1)}>
+                      Back
+                    </button>
+                    {last ? (
+                      <>
+                        <button
+                          type="button"
+                          className={hack.verdict === "failed" ? "quiet verdict-word is-failed" : "quiet"}
+                          aria-pressed={hack.verdict === "failed"}
+                          onClick={() => void setVerdict(hack.id, "failed")}
+                        >
+                          Failed
+                        </button>
+                        <button
+                          type="button"
+                          className="primary"
+                          aria-pressed={hack.verdict === "worked"}
+                          onClick={() => void setVerdict(hack.id, "worked")}
+                        >
+                          Worked
+                        </button>
+                      </>
+                    ) : (
+                      <button type="button" className="primary" onClick={() => go(index + 1)}>
+                        Next
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </>
         )}
       </div> : null}

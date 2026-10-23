@@ -539,6 +539,7 @@ h2.sync-heading { margin-top: 1.75rem; }
 }
 
 .steps li { margin: 0.35rem 0; padding-left: 0.25rem; }
+.steps li.is-now { font-weight: 700; }
 .steps li::marker { font-weight: 700; }
 .steps li .step-photo {
   float: left;
@@ -679,6 +680,70 @@ legend { font-weight: 700; padding: 0; }
 }
 
 .status { margin: 0.4rem 0; }
+
+.follow {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(22px + 0.1rem + 1.5em + 0.4rem + 1px + env(safe-area-inset-bottom));
+  z-index: 3;
+  background: var(--nav);
+  border-top: 1px solid var(--rule);
+}
+
+.follow-inner {
+  width: min(40rem, 100%);
+  margin: 0 auto;
+  padding: 0.45rem 1.25rem 0.55rem;
+}
+
+.follow-count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.follow-line {
+  margin: 0.15rem 0 0.45rem;
+  max-width: 65ch;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.follow-line .step-photo { margin-top: 0.2rem; }
+
+.follow-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.follow-actions button {
+  flex: 1;
+  min-height: 48px;
+  touch-action: manipulation;
+  background: transparent;
+  border: 0;
+}
+
+.follow-actions button.primary {
+  background: var(--ink);
+  color: var(--sheet);
+  border: 1px solid transparent;
+}
+
+html[data-follow="1"] .column {
+  padding-bottom: calc(13.5rem + env(safe-area-inset-bottom));
+}
+
+html[data-follow="1"] .toast {
+  top: calc(0.75rem + env(safe-area-inset-top));
+  bottom: auto;
+}
+
+html[data-follow="1"] .steps li {
+  scroll-margin-top: 1rem;
+  scroll-margin-bottom: calc(12rem + env(safe-area-inset-bottom));
+}
 
 .nav {
   position: fixed;

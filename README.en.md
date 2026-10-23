@@ -11,6 +11,7 @@ Live: **https://snag-hacks.vercel.app** (`snag.vercel.app` was taken)
 - A public link (YouTube and others), typed text, audio/video, or an agent
 - Needle on the device turns words into steps
 - Cabinet: untried / worked / failed, and a filter for each category
+- An open card keeps the current step above the bottom bar. Back and Next walk the procedure. The last step marks Worked or Failed. Left and right arrow keys do the same.
 - One computer keeps `data/library.json`. The other device scans the code on the sync page
 - On a phone: share a YouTube link into Snag
 - Each card can show a QR code. Friends scan it in Snag. With the cabinet computer on, the photos come with the card. Share several makes one code for a bunch of cards.

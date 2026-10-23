@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-19T12:00:00.000Z",
+  "generatedAt": "2026-10-23T12:00:00.000Z",
   "title": "Design System: Snag",
   "extensions": {
     "colorMeta": {
@@ -130,7 +130,7 @@
       "name": "Open Index Card",
       "kind": "card",
       "refersTo": "index-card",
-      "description": "The same card opened. The orange tab rises and the steps show.",
+      "description": "The same card opened. The orange tab rises, the steps show, and the current step is bold.",
       "html": "<article class=\"ds-card ds-card-open\"><span class=\"ds-tab\" aria-hidden=\"true\"></span><div class=\"ds-card-copy\"><span class=\"ds-card-title\">Wine stain</span><span class=\"ds-card-blurb\">When a red wine stain is still wet</span></div><ol class=\"ds-steps\"><li>Cover the stain with salt.</li><li>Rinse from the back with cold water.</li></ol></article>",
       "css": ".ds-card { position: relative; margin-top: 1.35rem; background: var(--sheet, #f7f8f6); border: 1px solid var(--rule, #c9cdc4); border-radius: 8px; padding-bottom: 0.6rem; } .ds-tab { position: absolute; top: -11px; left: 1rem; width: 4.5rem; height: 12px; background: var(--tab, #e65300); border-radius: 4px 4px 0 0; } .ds-card-copy { display: grid; padding: 0.85rem 1rem 0.35rem; } .ds-card-title { font-family: Anybody, \"Avenir Next Condensed\", sans-serif; font-stretch: 75%; font-weight: 700; font-size: 1.55rem; letter-spacing: -0.03em; line-height: 1.05; color: var(--ink, #1c1915); } .ds-card-blurb { margin-top: 0.35rem; color: var(--muted, #4f4a42); font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 1.02rem; line-height: 1.35; } .ds-steps { margin: 0.4rem 0 0; padding: 0 1rem 0 2.4rem; max-width: 65ch; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; line-height: 1.5; color: var(--ink, #1c1915); } .ds-steps li { margin: 0.35rem 0; } .ds-steps li::marker { font-weight: 700; }"
     },
@@ -141,6 +141,13 @@
       "description": "A topic on a card. Choosing it filters the cabinet.",
       "html": "<button class=\"ds-tag\" type=\"button\">laundry</button>",
       "css": ".ds-tag { min-height: 44px; border: 0; background: transparent; color: var(--muted, #4f4a42); text-decoration: underline; text-underline-offset: 0.18em; padding: 0.4rem 0.2rem; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; font-size: 17px; cursor: pointer; } .ds-tag:hover { background: color-mix(in srgb, var(--ink, #1c1915) 6%, transparent); } .ds-tag:focus-visible { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
+    },
+    {
+      "name": "Follow Bar",
+      "kind": "custom",
+      "description": "The current step, pinned above the bottom nav while a card is open. Back and Next walk it. The last step marks Failed or Worked.",
+      "html": "<div class=\"ds-follow\" role=\"region\" aria-label=\"Follow this hack\"><p class=\"ds-follow-count\">2 of 3</p><p class=\"ds-follow-line\">Rinse from the back with cold water.</p><div class=\"ds-follow-actions\"><button class=\"ds-btn-quiet\" type=\"button\">Back</button><button class=\"ds-btn-primary\" type=\"button\">Next</button></div></div>",
+      "css": ".ds-follow { background: var(--nav, #f7f8f6); border-top: 1px solid var(--rule, #c9cdc4); padding: 0.45rem 1.25rem 0.55rem; font-family: \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif; color: var(--ink, #1c1915); } .ds-follow-count { margin: 0; color: var(--muted, #4f4a42); font-size: 0.85rem; } .ds-follow-line { margin: 0.15rem 0 0.45rem; font-size: 1.15rem; line-height: 1.35; } .ds-follow-actions { display: flex; gap: 0.5rem; } .ds-btn-quiet, .ds-btn-primary { flex: 1; min-height: 48px; border-radius: 6px; font: inherit; cursor: pointer; } .ds-btn-quiet { background: transparent; color: var(--ink, #1c1915); border: 0; } .ds-btn-primary { background: var(--ink, #1c1915); color: var(--sheet, #f7f8f6); border: 1px solid transparent; } .ds-btn-quiet:focus-visible, .ds-btn-primary:focus-visible { outline: 2px solid var(--ink, #1c1915); outline-offset: 3px; }"
     },
     {
       "name": "Bottom Nav",
