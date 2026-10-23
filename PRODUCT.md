@@ -25,7 +25,7 @@ The person pastes a YouTube, Instagram, Facebook, or other link, attaches a vide
 ## Capabilities and Constraints
 
 - The name is Snag. The verb is snag a hack.
-- A collapsed card shows one photo of the thing when one exists, a short description, and the title. Opening it shows the procedure. The current step also sits above the bottom bar, with Back and Next, so the other hand can stay on the job. The last step marks Worked or Failed from that bar. The full numbered list stays on the card. Editing hides the bar.
+- A collapsed card shows one photo of the thing when one exists, a short description, and the title. Opening it shows the procedure. The current step also sits above the bottom bar, with Back and Next, so the other hand can stay on the job. The last step marks Worked or Failed from that bar. The full numbered list stays on the card. Editing hides the bar. Keep the screen on is optional and off until chosen. The choice is remembered on this device. The screen stays awake only while that card is open.
 - YouTube hashtags in the title or description become tags on the draft.
 - A YouTube link also brings the public preview photo, and the few stills YouTube publishes beside it, as pictures the person can keep or drop.
 - When the procedure is a sequence of images, the person attaches the video file. Snag samples frames on the device and offers them as pictures to include. It does not download the video file to a server.

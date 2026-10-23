@@ -6,6 +6,28 @@ import { DraftForm } from "./DraftForm.tsx"
 import { QrShare } from "./QrShare.tsx"
 
 const verdicts: Verdict[] = ["untried", "worked", "failed"]
+const awakeKey = "snag.awake"
+
+function screenCanStayOn() {
+  return "wakeLock" in navigator
+}
+
+function readStayOn() {
+  try {
+    return localStorage.getItem(awakeKey) === "1"
+  } catch {
+    return false
+  }
+}
+
+function writeStayOn(on: boolean) {
+  try {
+    if (on) localStorage.setItem(awakeKey, "1")
+    else localStorage.removeItem(awakeKey)
+  } catch {
+    // Private mode can refuse the write. The switch still works for this visit.
+  }
+}
 
 export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onPick }: { hack: Hack; open: boolean; onToggle: () => void; onTag: (tag: string) => void; onCategory: (category: string) => void; picked?: boolean; onPick?: (id: string) => void }) {
   const { updateHack, setVerdict, deleteHack } = useStore()
@@ -18,9 +40,14 @@ export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onP
   if (follow.key !== followKey) setFollow({ key: followKey, step: 0, moved: false })
   const step = follow.step
   const moved = follow.moved
+  const [stayOn, setStayOn] = useState(readStayOn)
+  const [stayNote, setStayNote] = useState("")
   const ref = useRef<HTMLElement>(null)
   const nowRef = useRef<HTMLLIElement>(null)
+  const lockRef = useRef<WakeLockSentinel | null>(null)
+  const holdRef = useRef(0)
   const bodyId = useId()
+  const canStay = screenCanStayOn()
   const following = open && !editing && hack.steps.length > 0
   const index = Math.min(step, Math.max(0, hack.steps.length - 1))
   const last = index >= hack.steps.length - 1
@@ -62,6 +89,73 @@ export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onP
 
   function go(next: number) {
     setFollow((current) => ({ ...current, moved: true, step: Math.min(hack.steps.length - 1, Math.max(0, next)) }))
+  }
+
+  async function claimScreen() {
+    if (!screenCanStayOn()) return false
+    if (document.visibilityState !== "visible" || lockRef.current) return true
+    const hold = holdRef.current
+    try {
+      const sentinel = await navigator.wakeLock.request("screen")
+      if (hold !== holdRef.current || lockRef.current) {
+        await sentinel.release()
+        return false
+      }
+      lockRef.current = sentinel
+      sentinel.addEventListener("release", () => {
+        if (lockRef.current === sentinel) lockRef.current = null
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async function releaseScreen() {
+    holdRef.current += 1
+    const current = lockRef.current
+    lockRef.current = null
+    try {
+      await current?.release()
+    } catch {
+      // The browser already dropped the lock.
+    }
+  }
+
+  useEffect(() => {
+    if (!following || !stayOn) {
+      void releaseScreen()
+      return
+    }
+    let stopped = false
+    const claim = () => {
+      if (!stopped) void claimScreen()
+    }
+    claim()
+    document.addEventListener("visibilitychange", claim)
+    return () => {
+      stopped = true
+      document.removeEventListener("visibilitychange", claim)
+      void releaseScreen()
+    }
+  }, [following, stayOn])
+
+  async function toggleStay() {
+    if (stayOn) {
+      setStayOn(false)
+      setStayNote("")
+      writeStayOn(false)
+      await releaseScreen()
+      return
+    }
+    const ok = await claimScreen()
+    if (!ok) {
+      setStayNote("This browser did not keep the screen on.")
+      return
+    }
+    setStayOn(true)
+    setStayNote("")
+    writeStayOn(true)
   }
 
   const href = safeHttpUrl(hack.source?.url)
@@ -185,7 +279,17 @@ export function HackSheet({ hack, open, onToggle, onTag, onCategory, picked, onP
             {following ? (
               <div className="follow" role="region" aria-label="Follow this hack">
                 <div className="follow-inner">
-                  <p className="follow-count">{index + 1} of {hack.steps.length}</p>
+                  <div className="follow-head">
+                    <p className="follow-count">{index + 1} of {hack.steps.length}</p>
+                    {canStay ? (
+                      <button type="button" className={stayOn ? "quiet is-on" : "quiet"} aria-pressed={stayOn} onClick={() => void toggleStay()}>
+                        {stayOn ? "Screen stays on" : "Keep the screen on"}
+                      </button>
+                    ) : null}
+                  </div>
+                  {stayNote ? (
+                    <p className="follow-note" role="alert">{stayNote}</p>
+                  ) : null}
                   <p className="follow-line" aria-live="polite">
                     <span className="sr-only">Step {index + 1} of {hack.steps.length}. </span>
                     {hack.pictures?.[index] ? <img className="step-photo" src={hack.pictures[index]} alt="" /> : null}
